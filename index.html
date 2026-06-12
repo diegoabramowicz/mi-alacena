@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alacena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.3/umd/index.min.js"></script>
+
+<style>
+/* ── Reset & tokens ───────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red:        #C0392B;
+  --red-dark:   #A93226;
+  --red-light:  #FDECEA;
+  --amber:      #E67E22;
+  --amber-light:#FEF3E2;
+  --green:      #27AE60;
+  --green-light:#E9F7EF;
+  --bg:         #F7F7F5;
+  --surface:    #FFFFFF;
+  --border:     #E8E8E4;
+  --border-mid: #D8D8D2;
+  --text-primary:   #1A1A18;
+  --text-secondary: #6B6B65;
+  --text-tertiary:  #9B9B94;
+  --font-body:  'Inter', sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.08);
+  --transition: .15s ease;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ───────────────────────────────── */
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem .875rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-icon {
+  width: 30px; height: 30px;
+  background: var(--red);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px;
+}
+.logo-text {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.3px;
+  color: var(--text-primary);
+}
+.logo-text span { color: var(--red); }
+.header-sync {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sync-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+.sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
+.sync-dot.error   { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.content { flex: 1; padding: 1rem 1.25rem 6rem; }
+
+/* ── Tabs ─────────────────────────────────── */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 10;
+}
+.tab {
+  flex: 1; padding: .75rem .5rem .65rem;
+  background: none; border: none;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  transition: color var(--transition);
+}
+.tab i { font-size: 20px; }
+.tab.active { color: var(--red); }
+.tab:hover:not(.active) { color: var(--text-secondary); }
+
+/* ── Stats ────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: .875rem .75rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.stat-num {
+  font-size: 24px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+.stat-lbl {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* ── Filters ──────────────────────────────── */
+.filters {
+  display: flex; gap: 8px;
+  margin-bottom: 1rem;
+}
+.filters select {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  appearance: none;
+  cursor: pointer;
+}
+
+/* ── Product cards ────────────────────────── */
+.product-list { display: flex; flex-direction: column; gap: 8px; }
+
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .875rem 1rem;
+  display: flex; align-items: flex-start; gap: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+.product-card:hover { box-shadow: var(--shadow-md); }
+.product-card.vencido { border-left: 3px solid var(--red); }
+.product-card.pronto  { border-left: 3px solid var(--amber); }
+.product-card.ok      { border-left: 3px solid var(--green); }
+
+.prod-info { flex: 1; min-width: 0; }
+.prod-name {
+  font-size: 14px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prod-meta {
+  font-size: 12px; color: var(--text-secondary);
+  margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;
+}
+.prod-footer {
+  display: flex; align-items: center; gap: 8px; margin-top: 7px;
+}
+.badge {
+  font-size: 11px; padding: 2px 8px;
+  border-radius: 20px; font-weight: 500;
+}
+.badge.vencido { background: var(--red-light);   color: var(--red-dark); }
+.badge.pronto  { background: var(--amber-light);  color: #8a4a00; }
+.badge.ok      { background: var(--green-light);  color: #1a6b38; }
+.prod-date { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
+
+.prod-actions { display: flex; gap: 4px; align-items: center; }
+.icon-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 17px;
+  padding: 5px; border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.icon-btn:hover { background: var(--bg); color: var(--text-primary); }
+
+/* ── Empty & loading states ───────────────── */
+.empty {
+  text-align: center; color: var(--text-secondary);
+  font-size: 14px; padding: 3rem 1rem;
+}
+.empty i { font-size: 36px; display: block; margin-bottom: .75rem; color: var(--text-tertiary); }
+
+.loading-overlay {
+  display: none; position: fixed;
+  inset: 0; background: rgba(247,247,245,.85);
+  z-index: 50; align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.loading-overlay.active { display: flex; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; color: var(--text-secondary); }
+
+/* ── Toast ────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+  background: var(--text-primary); color: #fff;
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 13px; white-space: nowrap;
+  opacity: 0; transition: opacity .2s;
+  z-index: 100; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* ── Forms ────────────────────────────────── */
+.form-section { display: none; }
+.form-section.active { display: block; }
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.form-card-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 1rem;
+}
+.form-row { margin-bottom: .875rem; }
+.form-row:last-child { margin-bottom: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: .875rem; }
+
+label {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-secondary);
+  display: block; margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+input, select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+}
+
+.qty-control { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+.qty-btn {
+  width: 30px; height: 30px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 18px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-primary);
+  transition: background var(--transition);
+}
+.qty-btn:hover { background: var(--bg); }
+.qty-val {
+  font-size: 16px; font-weight: 600;
+  font-family: var(--font-mono);
+  min-width: 28px; text-align: center;
+}
+
+/* ── Buttons ──────────────────────────────── */
+.btn {
+  width: 100%; padding: 11px;
+  font-size: 14px; font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer; font-family: var(--font-body);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: background var(--transition), border-color var(--transition);
+}
+.btn:hover { background: var(--bg); }
+.btn.primary {
+  background: var(--red); color: #fff;
+  border-color: var(--red-dark);
+}
+.btn.primary:hover { background: var(--red-dark); }
+.btn.ghost { background: none; border-color: transparent; color: var(--text-secondary); }
+.btn + .btn { margin-top: 8px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Scanner ──────────────────────────────── */
+.scan-idle-box {
+  background: var(--surface); border: 2px dashed var(--border-mid);
+  border-radius: var(--radius-lg); padding: 2rem 1.5rem;
+  text-align: center; margin-bottom: 1rem;
+}
+.scan-idle-box i { font-size: 40px; color: var(--text-tertiary); display: block; margin-bottom: .75rem; }
+.scan-idle-box p { font-size: 14px; font-weight: 500; margin-bottom: .25rem; }
+.scan-idle-box small { font-size: 12px; color: var(--text-secondary); }
+
+#video-wrap {
+  display: none; border-radius: var(--radius-lg);
+  overflow: hidden; position: relative; margin-bottom: 1rem;
+}
+#scan-video { width: 100%; display: block; max-height: 230px; object-fit: cover; }
+.scan-reticle {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px; height: 100px;
+  border: 2px solid rgba(255,255,255,.9);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,.4);
+}
+.scan-line {
+  position: absolute; top: 50%; left: 5%; right: 5%;
+  height: 2px; background: var(--red);
+  animation: scanline 2s ease-in-out infinite;
+}
+@keyframes scanline {
+  0%,100% { top: 30%; }
+  50% { top: 70%; }
+}
+
+/* ── Found / New cards ────────────────────── */
+.status-card {
+  border-radius: var(--radius-lg); padding: 1rem 1.125rem;
+  margin-bottom: 1rem; border: 1px solid;
+}
+.status-card.found {
+  background: var(--green-light); border-color: #a8dbbe;
+}
+.status-card.new-product {
+  background: #EEF4FF; border-color: #bad0f7;
+}
+.status-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  margin-bottom: .5rem;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.status-tag.found   { background: var(--green-light); color: #1a6b38; border: 1px solid #a8dbbe; }
+.status-tag.new-product { background: #EEF4FF; color: #2156be; border: 1px solid #bad0f7; }
+.status-name { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.status-meta { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+/* ── Sections ─────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Cargando productos...</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+  <header class="header">
+    <div class="header-row">
+      <div class="logo">
+        <div class="logo-icon"><i class="ti ti-box"></i></div>
+        <div class="logo-text">mi<span>alacena</span></div>
+      </div>
+      <div class="header-sync">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">sincronizado</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ══════════════ INVENTARIO ══════════════ -->
+    <div id="page-inventario" class="page active">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num" id="stat-total">—</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" style="color:var(--amber)" id="stat-pronto">—</div>
+          <div class="stat-lbl">Por vencer</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" style="color:var(--red)" id="stat-vencido">—</div>
+          <div class="stat-lbl">Vencidos</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <select id="filter-est" onchange="renderList()">
+          <option value="">Todos</option>
+          <option value="vencido">Vencidos</option>
+          <option value="pronto">Por vencer</option>
+          <option value="ok">En buen estado</option>
+        </select>
+        <select id="filter-cat" onchange="renderList()">
+          <option value="">Todas las categorías</option>
+          <option>Cereales / Pastas</option>
+          <option>Enlatados</option>
+          <option>Lácteos</option>
+          <option>Snacks</option>
+          <option>Bebidas</option>
+          <option>Condimentos</option>
+          <option>Otro</option>
+        </select>
+      </div>
+
+      <div class="product-list" id="product-list"></div>
+    </div>
+
+    <!-- ══════════════ SCANNER ══════════════ -->
+    <div id="page-scanner" class="page">
+
+      <!-- idle -->
+      <div id="scan-idle" class="form-section active">
+        <div class="scan-idle-box">
+          <i class="ti ti-barcode"></i>
+          <p>Escanear código de barras</p>
+          <small>Apuntá la cámara al código del producto</small>
+        </div>
+        <button class="btn primary" onclick="startScan()">
+          <i class="ti ti-camera"></i> Activar cámara
+        </button>
+        <button class="btn" style="margin-top:8px" onclick="showManualInput()">
+          <i class="ti ti-keyboard"></i> Ingresar código manualmente
+        </button>
+      </div>
+
+      <!-- scanning -->
+      <div id="scan-scanning" class="form-section">
+        <div id="video-wrap">
+          <video id="scan-video" autoplay playsinline muted></video>
+          <div class="scan-reticle">
+            <div class="scan-line"></div>
+          </div>
+        </div>
+        <button class="btn" onclick="stopScan()">
+          <i class="ti ti-player-stop"></i> Detener cámara
+        </button>
+        <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-top:.75rem">
+          Centrá el código de barras en el recuadro blanco
+        </p>
+      </div>
+
+      <!-- manual barcode input -->
+      <div id="scan-manual" class="form-section">
+        <div class="form-card">
+          <div class="form-row">
+            <label>Código de barras</label>
+            <input type="text" id="manual-bc" inputmode="numeric" placeholder="Ej: 7790895000123">
+          </div>
+          <button class="btn primary" onclick="lookupManual()">
+            <i class="ti ti-search"></i> Buscar producto
+          </button>
+          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- producto encontrado -->
+      <div id="scan-found" class="form-section">
+        <div class="status-card found">
+          <div class="status-tag found"><i class="ti ti-check" style="font-size:11px"></i> Producto reconocido</div>
+          <div class="status-name" id="found-name">—</div>
+          <div class="status-meta" id="found-meta">—</div>
+        </div>
+        <div class="form-card">
+          <div class="form-grid">
+            <div>
+              <label>Cantidad</label>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="changeQty(-1, 'scan')">−</button>
+                <span class="qty-val" id="qty-scan">1</span>
+                <button class="qty-btn" onclick="changeQty(1, 'scan')">+</button>
+              </div>
+            </div>
+            <div>
+              <label>Fecha de vencimiento</label>
+              <input type="date" id="found-fecha">
+            </div>
+          </div>
+          <button class="btn primary" onclick="saveFound()">
+            <i class="ti ti-check"></i> Guardar
+          </button>
+          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- producto nuevo -->
+      <div id="scan-new" class="form-section">
+        <div class="status-card new-product">
+          <div class="status-tag new-product"><i class="ti ti-sparkles" style="font-size:11px"></i> Producto nuevo</div>
+          <div class="status-meta">No está en tu lista — completá los datos una sola vez.</div>
+        </div>
+        <div class="form-card">
+          <div class="form-row">
+            <label>Nombre del producto</label>
+            <input type="text" id="new-nombre" placeholder="Ej: Arroz largo fino 1kg">
+          </div>
+          <div class="form-grid">
+            <div>
+              <label>Categoría</label>
+              <select id="new-cat">
+                <option>Cereales / Pastas</option>
+                <option>Enlatados</option>
+                <option>Lácteos</option>
+                <option>Snacks</option>
+                <option>Bebidas</option>
+                <option>Condimentos</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div>
+              <label>Ubicación</label>
+              <input type="text" id="new-ubic" placeholder="Alacena alta">
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="form-grid">
+            <div>
+              <label>Cantidad</label>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="changeQty(-1, 'scan')">−</button>
+                <span class="qty-val" id="qty-scan">1</span>
+                <button class="qty-btn" onclick="changeQty(1, 'scan')">+</button>
+              </div>
+            </div>
+            <div>
+              <label>Fecha de vencimiento</label>
+              <input type="date" id="new-fecha">
+            </div>
+          </div>
+          <button class="btn primary" onclick="saveNew()">
+            <i class="ti ti-check"></i> Guardar producto
+          </button>
+          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ MANUAL ══════════════ -->
+    <div id="page-manual" class="page">
+      <div class="form-card">
+        <div class="form-card-title" id="manual-title">Nuevo producto</div>
+        <div class="form-row">
+          <label>Nombre del producto</label>
+          <input type="text" id="m-nombre" placeholder="Ej: Fideos moño 400g">
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>Categoría</label>
+            <select id="m-cat">
+              <option>Cereales / Pastas</option>
+              <option>Enlatados</option>
+              <option>Lácteos</option>
+              <option>Snacks</option>
+              <option>Bebidas</option>
+              <option>Condimentos</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div>
+            <label>Ubicación</label>
+            <input type="text" id="m-ubic" placeholder="Alacena baja">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>Fecha de vencimiento</label>
+            <input type="date" id="m-fecha">
+          </div>
+          <div>
+            <label>Cantidad</label>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="changeQty(-1, 'manual')">−</button>
+              <span class="qty-val" id="qty-manual">1</span>
+              <button class="qty-btn" onclick="changeQty(1, 'manual')">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Código de barras (opcional)</label>
+          <input type="text" id="m-barcode" inputmode="numeric" placeholder="Para reconocimiento futuro">
+        </div>
+        <button class="btn primary" id="btn-save-manual" onclick="saveManual()">
+          <i class="ti ti-check"></i> Guardar producto
+        </button>
+        <button class="btn ghost" id="btn-cancel-edit" style="display:none" onclick="cancelEdit()">
+          Cancelar edición
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Tab bar -->
+  <nav class="tabs">
+    <button class="tab active" id="tab-inventario" onclick="showPage('inventario')">
+      <i class="ti ti-package"></i>
+      Inventario
+    </button>
+    <button class="tab" id="tab-scanner" onclick="showPage('scanner')">
+      <i class="ti ti-barcode"></i>
+      Escanear
+    </button>
+    <button class="tab" id="tab-manual" onclick="showPage('manual')">
+      <i class="ti ti-plus"></i>
+      Manual
+    </button>
+  </nav>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbzXumBQrtu_RM6fqItVMYgT2MueFzDPZn7R51RDCdVuvH7uo8fifto5YJY-NaqQG00B/exec';
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let productos     = [];
+let qtyScan       = 1;
+let qtyManual     = 1;
+let currentBC     = '';
+let currentFoundId = null;
+let editId        = null;
+let scanner       = null;
+let scanning      = false;
+
+// ─────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────
+function getEstado(f) {
+  if (!f) return 'ok';
+  const hoy  = new Date(); hoy.setHours(0,0,0,0);
+  const diff = (new Date(f + 'T00:00:00') - hoy) / 86400000;
+  return diff < 0 ? 'vencido' : diff <= 7 ? 'pronto' : 'ok';
+}
+function fmtF(f) {
+  if (!f) return '—';
+  const [y,m,d] = f.split('-');
+  return `${d}/${m}/${y}`;
+}
+function diasLabel(f) {
+  if (!f) return '';
+  const hoy  = new Date(); hoy.setHours(0,0,0,0);
+  const diff = Math.round((new Date(f + 'T00:00:00') - hoy) / 86400000);
+  if (diff < 0)    return `Venció hace ${Math.abs(diff)} día${Math.abs(diff) !== 1 ? 's' : ''}`;
+  if (diff === 0)  return 'Vence hoy';
+  if (diff === 1)  return 'Vence mañana';
+  return `Vence en ${diff} días`;
+}
+
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function setSyncStatus(state) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  label.textContent = state === 'syncing' ? 'sincronizando...' : state === 'error' ? 'error de sync' : 'sincronizado';
+}
+
+function setLoading(show, text = 'Cargando productos...') {
+  const el = document.getElementById('loading');
+  document.getElementById('loading-text').textContent = text;
+  el.classList.toggle('active', show);
+}
+
+// ─────────────────────────────────────────────
+//  API
+// ─────────────────────────────────────────────
+async function fetchProductos() {
+  setSyncStatus('syncing');
+  try {
+    const res  = await fetch(API_URL);
+    const data = await res.json();
+    productos  = data.productos || [];
+    setSyncStatus('ok');
+    return true;
+  } catch (e) {
+    setSyncStatus('error');
+    showToast('Error al conectar con Sheets');
+    return false;
+  }
+}
+
+async function apiPost(payload) {
+  setSyncStatus('syncing');
+  const res  = await fetch(API_URL, {
+    method:  'POST',
+    body:    JSON.stringify(payload),
+  });
+  const data = await res.json();
+  setSyncStatus('ok');
+  return data;
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+function renderList() {
+  const fe   = document.getElementById('filter-est').value;
+  const fc   = document.getElementById('filter-cat').value;
+  const list = document.getElementById('product-list');
+
+  let filtrados = productos.filter(p => {
+    if (fe && getEstado(p.FechaVenc) !== fe) return false;
+    if (fc && p['Categoría'] !== fc)          return false;
+    return true;
+  });
+
+  filtrados.sort((a, b) => {
+    const ord = { vencido: 0, pronto: 1, ok: 2 };
+    const d   = ord[getEstado(a.FechaVenc)] - ord[getEstado(b.FechaVenc)];
+    if (d !== 0) return d;
+    if (a.FechaVenc && b.FechaVenc) return a.FechaVenc.localeCompare(b.FechaVenc);
+    return 0;
+  });
+
+  document.getElementById('stat-total').textContent   = productos.length;
+  document.getElementById('stat-pronto').textContent  = productos.filter(p => getEstado(p.FechaVenc) === 'pronto').length;
+  document.getElementById('stat-vencido').textContent = productos.filter(p => getEstado(p.FechaVenc) === 'vencido').length;
+
+  if (!filtrados.length) {
+    list.innerHTML = `<div class="empty">
+      <i class="ti ti-package-off"></i>
+      ${productos.length === 0 ? 'Todavía no tenés productos.<br><small>Agregá uno desde Escanear o Manual.</small>' : 'No hay productos con ese filtro.'}
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtrados.map(p => {
+    const est = getEstado(p.FechaVenc);
+    const bl  = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
+    return `<div class="product-card ${est}">
+      <div class="prod-info">
+        <div class="prod-name">${p.Nombre}</div>
+        <div class="prod-meta">
+          <span>${p['Categoría'] || ''}</span>
+          ${p['Ubicación'] ? `<span><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px"></i> ${p['Ubicación']}</span>` : ''}
+          <span>×${p.Cantidad}</span>
+        </div>
+        <div class="prod-footer">
+          <span class="badge ${est}">${bl}</span>
+          ${p.FechaVenc
+            ? `<span class="prod-date">${fmtF(p.FechaVenc)} · ${diasLabel(p.FechaVenc)}</span>`
+            : `<span class="prod-date" style="color:var(--text-tertiary)">Sin fecha</span>`}
+        </div>
+      </div>
+      <div class="prod-actions">
+        <button class="icon-btn" onclick="editProducto('${p.ID}')" title="Editar"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" onclick="eliminarProducto('${p.ID}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  NAV
+// ─────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'inventario') renderList();
+  if (name !== 'scanner' && scanning) stopScan();
+}
+
+// ─────────────────────────────────────────────
+//  SCANNER
+// ─────────────────────────────────────────────
+function setScanState(name) {
+  document.querySelectorAll('#page-scanner .form-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('scan-' + name).classList.add('active');
+}
+
+function showManualInput() {
+  setScanState('manual');
+  document.getElementById('manual-bc').value = '';
+  document.getElementById('manual-bc').focus();
+}
+
+function lookupManual() {
+  const code = document.getElementById('manual-bc').value.trim();
+  if (!code) return;
+  lookupBarcode(code);
+}
+
+function lookupBarcode(code) {
+  currentBC   = code;
+  qtyScan     = 1;
+  updateQtyDisplay();
+
+  const existing = productos.find(p => p.Barcode === code);
+  if (existing) {
+    currentFoundId = existing.ID;
+    document.getElementById('found-name').textContent = existing.Nombre;
+    document.getElementById('found-meta').textContent =
+      [existing['Categoría'], existing['Ubicación']].filter(Boolean).join(' · ');
+    document.getElementById('found-fecha').value = '';
+    setScanState('found');
+  } else {
+    currentFoundId = null;
+    document.getElementById('new-nombre').value = '';
+    document.getElementById('new-fecha').value  = '';
+    document.getElementById('new-ubic').value   = '';
+    setScanState('new');
+  }
+}
+
+async function saveFound() {
+  const p = productos.find(x => x.ID === currentFoundId);
+  if (!p) return;
+
+  setLoading(true, 'Guardando...');
+  try {
+    await apiPost({
+      accion:    'editar',
+      id:        p.ID,
+      nombre:    p.Nombre,
+      categoria: p['Categoría'],
+      ubicacion: p['Ubicación'],
+      cantidad:  qtyScan,
+      fechaVenc: document.getElementById('found-fecha').value || p.FechaVenc,
+      barcode:   p.Barcode
+    });
+    await fetchProductos();
+    renderList();
+    showToast('✓ Producto actualizado');
+    setScanState('idle');
+    showPage('inventario');
+  } catch (e) {
+    showToast('Error al guardar');
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function saveNew() {
+  const nombre = document.getElementById('new-nombre').value.trim();
+  if (!nombre) { showToast('Ingresá el nombre del producto'); return; }
+
+  setLoading(true, 'Guardando...');
+  try {
+    await apiPost({
+      accion:    'agregar',
+      nombre,
+      categoria: document.getElementById('new-cat').value,
+      ubicacion: document.getElementById('new-ubic').value.trim(),
+      cantidad:  qtyScan,
+      fechaVenc: document.getElementById('new-fecha').value,
+      barcode:   currentBC
+    });
+    await fetchProductos();
+    renderList();
+    showToast('✓ Producto agregado');
+    setScanState('idle');
+    showPage('inventario');
+  } catch (e) {
+    showToast('Error al guardar');
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function startScan() {
+  setScanState('scanning');
+  document.getElementById('video-wrap').style.display = 'block';
+  try {
+    if (typeof ZXing === 'undefined') {
+      showToast('Librería de escaneo no disponible'); goIdleScan(); return;
+    }
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    scanner = codeReader; scanning = true;
+    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    const back    = devices.find(d =>
+      d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera')
+    ) || devices[devices.length - 1];
+
+    await codeReader.decodeFromVideoDevice(back?.deviceId, 'scan-video', (result, err) => {
+      if (result) { stopScan(); lookupBarcode(result.getText()); }
+    });
+  } catch (e) {
+    goIdleScan();
+    showToast('No se pudo acceder a la cámara');
+  }
+}
+
+function stopScan() {
+  if (scanner) { try { scanner.reset(); } catch (e) {} scanner = null; }
+  scanning = false;
+  document.getElementById('video-wrap').style.display = 'none';
+}
+
+function goIdleScan() {
+  stopScan(); setScanState('idle');
+  currentBC = ''; currentFoundId = null;
+  qtyScan = 1; updateQtyDisplay();
+}
+
+// ─────────────────────────────────────────────
+//  MANUAL FORM
+// ─────────────────────────────────────────────
+async function saveManual() {
+  const nombre = document.getElementById('m-nombre').value.trim();
+  if (!nombre) { showToast('Ingresá el nombre del producto'); return; }
+
+  const btn = document.getElementById('btn-save-manual');
+  btn.disabled = true;
+
+  setLoading(true, editId ? 'Guardando cambios...' : 'Guardando producto...');
+  try {
+    if (editId) {
+      await apiPost({
+        accion:    'editar',
+        id:        editId,
+        nombre,
+        categoria: document.getElementById('m-cat').value,
+        ubicacion: document.getElementById('m-ubic').value.trim(),
+        cantidad:  qtyManual,
+        fechaVenc: document.getElementById('m-fecha').value,
+        barcode:   document.getElementById('m-barcode').value.trim()
+      });
+      showToast('✓ Producto actualizado');
+    } else {
+      await apiPost({
+        accion:    'agregar',
+        nombre,
+        categoria: document.getElementById('m-cat').value,
+        ubicacion: document.getElementById('m-ubic').value.trim(),
+        cantidad:  qtyManual,
+        fechaVenc: document.getElementById('m-fecha').value,
+        barcode:   document.getElementById('m-barcode').value.trim()
+      });
+      showToast('✓ Producto guardado');
+    }
+    await fetchProductos();
+    resetManualForm();
+    showPage('inventario');
+  } catch (e) {
+    showToast('Error al guardar');
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
+  }
+}
+
+function editProducto(id) {
+  const p = productos.find(x => x.ID === id);
+  if (!p) return;
+
+  editId = id;
+  document.getElementById('m-nombre').value  = p.Nombre || '';
+  document.getElementById('m-cat').value     = p['Categoría'] || 'Otro';
+  document.getElementById('m-ubic').value    = p['Ubicación'] || '';
+  document.getElementById('m-fecha').value   = p.FechaVenc || '';
+  document.getElementById('m-barcode').value = p.Barcode || '';
+  qtyManual = parseInt(p.Cantidad) || 1;
+  document.getElementById('qty-manual').textContent = qtyManual;
+
+  document.getElementById('manual-title').textContent   = 'Editar producto';
+  document.getElementById('btn-cancel-edit').style.display = 'flex';
+  showPage('manual');
+}
+
+async function eliminarProducto(id) {
+  if (!confirm('¿Eliminar este producto de tu alacena?')) return;
+  setLoading(true, 'Eliminando...');
+  try {
+    await apiPost({ accion: 'eliminar', id });
+    await fetchProductos();
+    renderList();
+    showToast('Producto eliminado');
+  } catch (e) {
+    showToast('Error al eliminar');
+  } finally {
+    setLoading(false);
+  }
+}
+
+function cancelEdit() {
+  editId = null;
+  resetManualForm();
+}
+
+function resetManualForm() {
+  editId = null;
+  document.getElementById('m-nombre').value  = '';
+  document.getElementById('m-cat').value     = 'Cereales / Pastas';
+  document.getElementById('m-ubic').value    = '';
+  document.getElementById('m-fecha').value   = '';
+  document.getElementById('m-barcode').value = '';
+  qtyManual = 1;
+  document.getElementById('qty-manual').textContent = 1;
+  document.getElementById('manual-title').textContent = 'Nuevo producto';
+  document.getElementById('btn-cancel-edit').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+//  QTY
+// ─────────────────────────────────────────────
+function changeQty(d, ctx) {
+  if (ctx === 'scan') {
+    qtyScan = Math.max(1, qtyScan + d);
+    updateQtyDisplay();
+  } else {
+    qtyManual = Math.max(1, qtyManual + d);
+    document.getElementById('qty-manual').textContent = qtyManual;
+  }
+}
+function updateQtyDisplay() {
+  document.querySelectorAll('#qty-scan').forEach(el => el.textContent = qtyScan);
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+async function init() {
+  setLoading(true, 'Cargando productos...');
+  await fetchProductos();
+  renderList();
+  setLoading(false);
+}
+
+init();
+</script>
+</body>
+</html>
