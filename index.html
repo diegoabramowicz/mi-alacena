@@ -487,13 +487,6 @@ input:focus, select:focus {
         </select>
         <select id="filter-cat" onchange="renderList()">
           <option value="">Todas las categorías</option>
-          <option>Cereales / Pastas</option>
-          <option>Enlatados</option>
-          <option>Lácteos</option>
-          <option>Snacks</option>
-          <option>Bebidas</option>
-          <option>Condimentos</option>
-          <option>Otro</option>
         </select>
       </div>
 
@@ -603,15 +596,7 @@ input:focus, select:focus {
           <div class="form-grid">
             <div>
               <label>Categoría</label>
-              <select id="new-cat">
-                <option>Cereales / Pastas</option>
-                <option>Enlatados</option>
-                <option>Lácteos</option>
-                <option>Snacks</option>
-                <option>Bebidas</option>
-                <option>Condimentos</option>
-                <option>Otro</option>
-              </select>
+              <select id="new-cat"></select>
             </div>
             <div>
               <label>Ubicación</label>
@@ -691,15 +676,7 @@ input:focus, select:focus {
           <div class="form-grid">
             <div>
               <label>Categoría</label>
-              <select id="m-cat">
-                <option>Cereales / Pastas</option>
-                <option>Enlatados</option>
-                <option>Lácteos</option>
-                <option>Snacks</option>
-                <option>Bebidas</option>
-                <option>Condimentos</option>
-                <option>Otro</option>
-              </select>
+              <select id="m-cat"></select>
             </div>
             <div>
               <label>Ubicación</label>
@@ -733,6 +710,35 @@ input:focus, select:focus {
 
     </div>
 
+    <!-- ══════════════ AJUSTES ══════════════ -->
+    <div id="page-ajustes" class="page">
+
+      <!-- Categorías -->
+      <div class="form-card" style="margin-bottom:1rem">
+        <div class="form-card-title">Categorías</div>
+        <div id="settings-cats" style="margin-bottom:1rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="new-cat-input" placeholder="Nueva categoría..." style="flex:1">
+          <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarCategoria()">
+            <i class="ti ti-plus"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ubicaciones -->
+      <div class="form-card">
+        <div class="form-card-title">Ubicaciones</div>
+        <div id="settings-ubics" style="margin-bottom:1rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="new-ubic-input" placeholder="Nueva ubicación..." style="flex:1">
+          <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarUbicacion()">
+            <i class="ti ti-plus"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
   <!-- Tab bar -->
@@ -749,6 +755,10 @@ input:focus, select:focus {
       <i class="ti ti-plus"></i>
       Manual
     </button>
+    <button class="tab" id="tab-ajustes" onclick="showPage('ajustes')">
+      <i class="ti ti-settings"></i>
+      Ajustes
+    </button>
   </nav>
 </div>
 
@@ -756,12 +766,14 @@ input:focus, select:focus {
 // ─────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────
-const API_URL = 'https://script.google.com/macros/s/AKfycbw5y52UD0err8vLsNKhlZ-fhhFY9rqngq-L5RBHeFt7A34QFD5TRA5rRnozpC46Ns2L/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyR-D5rfK782x-2Mhr9HyuqF49zOAJtTNAMd1VYJKVir9ZtVJAWavD44tm8o9VOA6Wf/exec';
 
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
 let productos     = [];
+let categorias    = [];
+let ubicaciones   = [];
 let qtyScan       = 1;
 let qtyManual     = 1;
 let currentBC     = '';
@@ -823,7 +835,10 @@ async function fetchProductos() {
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
-    productos  = data.productos || [];
+    productos   = data.productos  || [];
+    categorias  = data.categorias || [];
+    ubicaciones = data.ubicaciones || [];
+    renderSelects();
     setSyncStatus('ok');
     return true;
   } catch (e) {
@@ -831,6 +846,39 @@ async function fetchProductos() {
     showToast('Error al conectar con Sheets');
     return false;
   }
+}
+
+function renderSelects() {
+  // Dropdowns de categoría
+  ['new-cat', 'm-cat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const current = el.value;
+    el.innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (current && categorias.includes(current)) el.value = current;
+  });
+
+  // Filter de categoría en inventario
+  const fc = document.getElementById('filter-cat');
+  if (fc) {
+    const current = fc.value;
+    fc.innerHTML = '<option value="">Todas las categorías</option>' +
+      categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (current) fc.value = current;
+  }
+
+  // Datalists de ubicación
+  ['new-ubic', 'm-ubic'].forEach(id => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const listId = id + '-list';
+    let dl = document.getElementById(listId);
+    if (!dl) { dl = document.createElement('datalist'); dl.id = listId; document.body.appendChild(dl); }
+    dl.innerHTML = ubicaciones.map(u => `<option value="${u}">`).join('');
+    input.setAttribute('list', listId);
+  });
+
+  renderSettingsLists();
 }
 
 async function apiPost(payload) {
@@ -1390,6 +1438,83 @@ function acKeydown(e) {
 
 function acBlur() {
   setTimeout(() => document.getElementById('ac-list').classList.remove('open'), 150);
+}
+
+// ─────────────────────────────────────────────
+//  AJUSTES
+// ─────────────────────────────────────────────
+function renderSettingsLists() {
+  const catsEl  = document.getElementById('settings-cats');
+  const ubicsEl = document.getElementById('settings-ubics');
+  if (!catsEl || !ubicsEl) return;
+
+  catsEl.innerHTML = categorias.length
+    ? categorias.map(c => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:14px">${c}</span>
+          <button class="icon-btn" onclick="eliminarCategoria('${c}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+        </div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-tertiary);padding:8px 0">Sin categorías todavía</p>';
+
+  ubicsEl.innerHTML = ubicaciones.length
+    ? ubicaciones.map(u => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:14px">${u}</span>
+          <button class="icon-btn" onclick="eliminarUbicacion('${u}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+        </div>`).join('')
+    : '<p style="font-size:13px;color:var(--text-tertiary);padding:8px 0">Sin ubicaciones todavía</p>';
+}
+
+async function agregarCategoria() {
+  const input  = document.getElementById('new-cat-input');
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  if (categorias.includes(nombre)) { showToast('Ya existe esa categoría'); return; }
+  setLoading(true, 'Guardando...');
+  try {
+    await apiPost({ accion: 'agregar_categoria', nombre });
+    await fetchProductos();
+    input.value = '';
+    showToast('✓ Categoría agregada');
+  } catch (e) { showToast('Error al guardar'); }
+  finally { setLoading(false); }
+}
+
+async function eliminarCategoria(nombre) {
+  if (!confirm(`¿Eliminar la categoría "${nombre}"?`)) return;
+  setLoading(true, 'Eliminando...');
+  try {
+    await apiPost({ accion: 'eliminar_categoria', nombre });
+    await fetchProductos();
+    showToast('Categoría eliminada');
+  } catch (e) { showToast('Error al eliminar'); }
+  finally { setLoading(false); }
+}
+
+async function agregarUbicacion() {
+  const input  = document.getElementById('new-ubic-input');
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  if (ubicaciones.includes(nombre)) { showToast('Ya existe esa ubicación'); return; }
+  setLoading(true, 'Guardando...');
+  try {
+    await apiPost({ accion: 'agregar_ubicacion', nombre });
+    await fetchProductos();
+    input.value = '';
+    showToast('✓ Ubicación agregada');
+  } catch (e) { showToast('Error al guardar'); }
+  finally { setLoading(false); }
+}
+
+async function eliminarUbicacion(nombre) {
+  if (!confirm(`¿Eliminar la ubicación "${nombre}"?`)) return;
+  setLoading(true, 'Eliminando...');
+  try {
+    await apiPost({ accion: 'eliminar_ubicacion', nombre });
+    await fetchProductos();
+    showToast('Ubicación eliminada');
+  } catch (e) { showToast('Error al eliminar'); }
+  finally { setLoading(false); }
 }
 
 // ─────────────────────────────────────────────
