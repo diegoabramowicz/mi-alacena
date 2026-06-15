@@ -406,6 +406,32 @@ input:focus, select:focus {
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 
+/* ── Autocomplete ─────────────────────────── */
+.autocomplete-wrap { position: relative; }
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 50;
+  max-height: 200px; overflow-y: auto;
+  display: none;
+}
+.autocomplete-list.open { display: block; }
+.autocomplete-item {
+  padding: 9px 12px;
+  font-size: 14px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 2px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover, .autocomplete-item.selected { background: var(--bg); }
+.autocomplete-item strong { color: var(--text-primary); font-weight: 500; }
+.autocomplete-item small  { color: var(--text-tertiary); font-size: 11px; }
+
 /* ── Sections ─────────────────────────────── */
 .page { display: none; }
 .page.active { display: block; }
@@ -526,8 +552,13 @@ input:focus, select:focus {
       <div id="scan-found" class="form-section">
         <div class="status-card found">
           <div class="status-tag found"><i class="ti ti-check" style="font-size:11px"></i> Producto reconocido</div>
-          <div class="status-name" id="found-name">—</div>
-          <div class="status-meta" id="found-meta">—</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+            <img id="found-img" src="" alt="" style="width:60px;height:60px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);display:none;flex-shrink:0">
+            <div>
+              <div class="status-name" id="found-name">—</div>
+              <div class="status-meta" id="found-meta">—</div>
+            </div>
+          </div>
         </div>
         <div class="form-card">
           <div class="form-grid">
@@ -555,7 +586,14 @@ input:focus, select:focus {
       <div id="scan-new" class="form-section">
         <div class="status-card new-product">
           <div class="status-tag new-product"><i class="ti ti-sparkles" style="font-size:11px"></i> Producto nuevo</div>
-          <div class="status-meta">No está en tu lista — completá los datos una sola vez.</div>
+          <div id="off-preview" style="display:none;align-items:center;gap:12px;margin-top:6px">
+            <img id="new-img" src="" alt="" style="width:60px;height:60px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">
+            <div>
+              <div style="font-size:13px;color:var(--text-secondary)">Encontrado en Open Food Facts</div>
+              <div id="off-product-name" style="font-size:14px;font-weight:500;color:var(--text-primary);margin-top:2px"></div>
+            </div>
+          </div>
+          <div class="status-meta" style="margin-top:6px">No está en tu lista — completá los datos una sola vez.</div>
         </div>
         <div class="form-card">
           <div class="form-row">
@@ -609,7 +647,13 @@ input:focus, select:focus {
         <div class="form-card-title" id="manual-title">Nuevo producto</div>
         <div class="form-row">
           <label>Nombre del producto</label>
-          <input type="text" id="m-nombre" placeholder="Ej: Fideos moño 400g">
+          <div class="autocomplete-wrap">
+            <input type="text" id="m-nombre" placeholder="Ej: Fideos moño 400g" autocomplete="off"
+              oninput="acInput(this.value)"
+              onkeydown="acKeydown(event)"
+              onblur="acBlur()">
+            <div class="autocomplete-list" id="ac-list"></div>
+          </div>
         </div>
         <div class="form-grid">
           <div>
@@ -679,7 +723,7 @@ input:focus, select:focus {
 // ─────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────
-const API_URL = 'https://script.google.com/macros/s/AKfycbwwupRr5CMxpmnGf4WYR7ZPZL5kSAq26TlVa1VUfKBVkkM0Vq84_O78vtCyRvlgcGiz/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw5y52UD0err8vLsNKhlZ-fhhFY9rqngq-L5RBHeFt7A34QFD5TRA5rRnozpC46Ns2L/exec';
 
 // ─────────────────────────────────────────────
 //  STATE
@@ -688,6 +732,7 @@ let productos     = [];
 let qtyScan       = 1;
 let qtyManual     = 1;
 let currentBC     = '';
+let currentOFFImg = '';
 let currentFoundId = null;
 let editId        = null;
 let scanner       = null;
@@ -803,7 +848,11 @@ function renderList() {
   list.innerHTML = filtrados.map(p => {
     const est = getEstado(p.FechaVenc);
     const bl  = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
+    const img = p.ImagenURL
+      ? `<img src="${p.ImagenURL}" alt="" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
+      : `<div style="width:48px;height:48px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:20px"><i class="ti ti-box"></i></div>`;
     return `<div class="product-card ${est}">
+      ${img}
       <div class="prod-info">
         <div class="prod-name">${p.Nombre}</div>
         <div class="prod-meta">
@@ -858,25 +907,91 @@ function lookupManual() {
   lookupBarcode(code);
 }
 
-function lookupBarcode(code) {
-  currentBC   = code;
-  qtyScan     = 1;
+async function lookupBarcode(code) {
+  currentBC      = code;
+  currentOFFImg  = '';
+  qtyScan        = 1;
   updateQtyDisplay();
 
   const existing = productos.find(p => p.Barcode === code);
   if (existing) {
+    // Producto ya en la lista
     currentFoundId = existing.ID;
     document.getElementById('found-name').textContent = existing.Nombre;
     document.getElementById('found-meta').textContent =
       [existing['Categoría'], existing['Ubicación']].filter(Boolean).join(' · ');
     document.getElementById('found-fecha').value = '';
+
+    // Mostrar foto si ya la tiene, si no buscar en OFF
+    const imgEl = document.getElementById('found-img');
+    if (existing.ImagenURL) {
+      imgEl.src = existing.ImagenURL;
+      imgEl.style.display = 'block';
+    } else {
+      imgEl.style.display = 'none';
+      fetchOFF(code).then(off => {
+        if (off?.img) { imgEl.src = off.img; imgEl.style.display = 'block'; currentOFFImg = off.img; }
+      });
+    }
     setScanState('found');
   } else {
+    // Producto nuevo — consultar Open Food Facts
     currentFoundId = null;
     document.getElementById('new-nombre').value = '';
     document.getElementById('new-fecha').value  = '';
     document.getElementById('new-ubic').value   = '';
+    document.getElementById('off-preview').style.display = 'none';
+    document.getElementById('new-img').src = '';
     setScanState('new');
+
+    setLoading(true, 'Buscando producto...');
+    const off = await fetchOFF(code);
+    setLoading(false);
+
+    if (off) {
+      if (off.nombre) document.getElementById('new-nombre').value = off.nombre;
+      if (off.cat)    setSelectValue('new-cat', off.cat);
+      if (off.img) {
+        currentOFFImg = off.img;
+        document.getElementById('new-img').src = off.img;
+        document.getElementById('off-product-name').textContent = off.nombre || '';
+        document.getElementById('off-preview').style.display = 'flex';
+      }
+    }
+  }
+}
+
+// Consulta la API de Open Food Facts
+async function fetchOFF(code) {
+  try {
+    const res  = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const data = await res.json();
+    if (data.status !== 1 || !data.product) return null;
+
+    const p      = data.product;
+    const nombre = p.product_name_es || p.product_name || p.abbreviated_product_name || '';
+    const img    = p.image_front_small_url || p.image_front_url || p.image_url || '';
+
+    // Mapear categoría de OFF a las nuestras
+    const tags = (p.categories_tags || []).join(' ').toLowerCase();
+    let cat = '';
+    if (tags.includes('bebida') || tags.includes('beverage') || tags.includes('drink')) cat = 'Bebidas';
+    else if (tags.includes('dairy') || tags.includes('lacteo') || tags.includes('leche') || tags.includes('yogur')) cat = 'Lácteos';
+    else if (tags.includes('cereal') || tags.includes('pasta') || tags.includes('arroz') || tags.includes('flour')) cat = 'Cereales / Pastas';
+    else if (tags.includes('snack') || tags.includes('chip') || tags.includes('galleta') || tags.includes('biscuit')) cat = 'Snacks';
+    else if (tags.includes('sauce') || tags.includes('condiment') || tags.includes('salsa') || tags.includes('aceite')) cat = 'Condimentos';
+    else if (tags.includes('canned') || tags.includes('conserva') || tags.includes('enlatado')) cat = 'Enlatados';
+
+    return { nombre: nombre.trim(), img, cat };
+  } catch (e) {
+    return null;
+  }
+}
+
+function setSelectValue(id, value) {
+  const sel = document.getElementById(id);
+  for (const opt of sel.options) {
+    if (opt.value === value) { sel.value = value; return; }
   }
 }
 
@@ -894,7 +1009,8 @@ async function saveFound() {
       ubicacion: p['Ubicación'],
       cantidad:  qtyScan,
       fechaVenc: document.getElementById('found-fecha').value || p.FechaVenc,
-      barcode:   p.Barcode
+      barcode:   p.Barcode,
+      imagenURL: p.ImagenURL || currentOFFImg
     });
     await fetchProductos();
     renderList();
@@ -921,7 +1037,8 @@ async function saveNew() {
       ubicacion: document.getElementById('new-ubic').value.trim(),
       cantidad:  qtyScan,
       fechaVenc: document.getElementById('new-fecha').value,
-      barcode:   currentBC
+      barcode:   currentBC,
+      imagenURL: currentOFFImg
     });
     await fetchProductos();
     renderList();
@@ -966,7 +1083,7 @@ function stopScan() {
 
 function goIdleScan() {
   stopScan(); setScanState('idle');
-  currentBC = ''; currentFoundId = null;
+  currentBC = ''; currentFoundId = null; currentOFFImg = '';
   qtyScan = 1; updateQtyDisplay();
 }
 
@@ -1082,6 +1199,93 @@ function changeQty(d, ctx) {
 }
 function updateQtyDisplay() {
   document.querySelectorAll('#qty-scan').forEach(el => el.textContent = qtyScan);
+}
+
+// ─────────────────────────────────────────────
+//  AUTOCOMPLETE
+// ─────────────────────────────────────────────
+let acIndex = -1;
+
+function acInput(val) {
+  const list = document.getElementById('ac-list');
+  acIndex = -1;
+  if (!val.trim()) { list.classList.remove('open'); list.innerHTML = ''; return; }
+
+  const q = val.toLowerCase();
+  // Buscar por nombre, evitar duplicados de nombre
+  const seen = new Set();
+  const matches = productos.filter(p => {
+    const n = (p.Nombre || '').toLowerCase();
+    if (!n.includes(q)) return false;
+    if (seen.has(p.Nombre)) return false;
+    seen.add(p.Nombre);
+    return true;
+  }).slice(0, 6);
+
+  if (!matches.length) { list.classList.remove('open'); list.innerHTML = ''; return; }
+
+  list.innerHTML = matches.map((p, i) =>
+    `<div class="autocomplete-item" data-index="${i}" data-nombre="${p.Nombre}"
+      data-cat="${p['Categoría'] || ''}" data-ubic="${p['Ubicación'] || ''}"
+      data-barcode="${p.Barcode || ''}"
+      onmousedown="acSelect(event, this)">
+      <strong>${highlight(p.Nombre, val)}</strong>
+      <small>${[p['Categoría'], p['Ubicación']].filter(Boolean).join(' · ')}</small>
+    </div>`
+  ).join('');
+  list.classList.add('open');
+}
+
+function highlight(text, q) {
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return text;
+  return text.slice(0, idx) +
+    `<mark style="background:var(--red-light);color:var(--red);border-radius:2px;padding:0 1px">${text.slice(idx, idx + q.length)}</mark>` +
+    text.slice(idx + q.length);
+}
+
+function acSelect(e, el) {
+  e.preventDefault();
+  const nombre  = el.dataset.nombre;
+  const cat     = el.dataset.cat;
+  const ubic    = el.dataset.ubic;
+  const barcode = el.dataset.barcode;
+
+  document.getElementById('m-nombre').value = nombre;
+  if (cat)     document.getElementById('m-cat').value     = cat;
+  if (ubic)    document.getElementById('m-ubic').value    = ubic;
+  if (barcode) document.getElementById('m-barcode').value = barcode;
+
+  document.getElementById('ac-list').classList.remove('open');
+  document.getElementById('m-fecha').focus();
+}
+
+function acKeydown(e) {
+  const list  = document.getElementById('ac-list');
+  const items = list.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acIndex = Math.min(acIndex + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('selected', i === acIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acIndex = Math.max(acIndex - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('selected', i === acIndex));
+  } else if (e.key === 'Enter' && acIndex >= 0) {
+    e.preventDefault();
+    items[acIndex].dispatchEvent(new MouseEvent('mousedown'));
+  } else if (e.key === 'Escape') {
+    list.classList.remove('open');
+  }
+}
+
+function acBlur() {
+  // Pequeño delay para que el click en el item se procese antes de cerrar
+  setTimeout(() => {
+    document.getElementById('ac-list').classList.remove('open');
+  }, 150);
 }
 
 // ─────────────────────────────────────────────
