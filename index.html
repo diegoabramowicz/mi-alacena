@@ -835,8 +835,19 @@ async function fetchProductos() {
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
-    productos   = data.productos  || [];
-    categorias  = data.categorias || [];
+    // Normalizar nombres de columnas de Sheets al formato interno
+    productos = (data.productos || []).map(p => ({
+      ID:         p.ID         || '',
+      Nombre:     p.Nombre     || '',
+      'Categoría': p['Categoría'] || '',
+      'Ubicación': p['Ubicación'] || '',
+      Cantidad:   p.Cantidad   || 1,
+      FechaVenc:  p['Fecha venc.'] || p.FechaVenc || '',
+      Barcode:    String(p['Código barras'] || p.Barcode || ''),
+      Agregado:   p.Agregado   || '',
+      ImagenURL:  p.ImagenURL  || ''
+    }));
+    categorias  = data.categorias  || [];
     ubicaciones = data.ubicaciones || [];
     renderSelects();
     setSyncStatus('ok');
@@ -995,7 +1006,7 @@ async function lookupBarcode(code) {
   qtyScan        = 1;
   updateQtyDisplay();
 
-  const existing = productos.find(p => p.Barcode === code);
+  const existing = productos.find(p => p.Barcode === String(code));
   if (existing) {
     // Producto ya en la lista
     currentFoundId = existing.ID;
@@ -1201,7 +1212,7 @@ function fillManualFromProduct(p) {
   manualOFFImg = p.ImagenURL || '';
 
   document.getElementById('m-nombre').value  = p.Nombre || '';
-  document.getElementById('m-cat').value     = p['Categoría'] || 'Otro';
+  document.getElementById('m-cat').value     = p['Categoría'] || (categorias[0] || '');
   document.getElementById('m-ubic').value    = p['Ubicación'] || '';
   document.getElementById('m-fecha').value   = p.FechaVenc || '';
   document.getElementById('m-barcode').value = p.Barcode || '';
@@ -1372,7 +1383,7 @@ function acInput(val) {
   const q    = val.toLowerCase();
   const seen = new Set();
   const matches = productos.filter(p => {
-    const n = (p.Nombre || '').toLowerCase();
+    const n = (p.Nombre  || '').toLowerCase();
     const b = (p.Barcode || '').toLowerCase();
     if (!n.includes(q) && !b.includes(q)) return false;
     if (seen.has(p.Nombre)) return false;
