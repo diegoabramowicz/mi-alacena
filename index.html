@@ -188,8 +188,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: .875rem 1rem;
-  display: flex; align-items: flex-start; gap: 10px;
+  padding: .75rem 1rem;
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition);
 }
@@ -198,18 +197,62 @@ body {
 .product-card.pronto  { border-left: 3px solid var(--amber); }
 .product-card.ok      { border-left: 3px solid var(--green); }
 
-.prod-info { flex: 1; min-width: 0; }
+.card-top {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: .5rem;
+}
+.card-body {
+  display: flex; align-items: center; gap: 10px;
+}
+.card-img {
+  width: 44px; height: 44px; object-fit: contain;
+  border-radius: 8px; background: #fff;
+  border: 1px solid var(--border); flex-shrink: 0;
+}
+.card-img-placeholder {
+  width: 44px; height: 44px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--text-tertiary); font-size: 20px;
+}
+.card-main { flex: 1; min-width: 0; }
 .prod-name {
-  font-size: 14px; font-weight: 500;
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
 }
 .prod-meta {
-  font-size: 12px; color: var(--text-secondary);
-  margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;
+  font-size: 11px; color: var(--text-secondary);
+  display: flex; gap: 8px; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden;
 }
-.prod-footer {
-  display: flex; align-items: center; gap: 8px; margin-top: 7px;
+.prod-meta span { overflow: hidden; text-overflow: ellipsis; }
+.prod-date {
+  font-size: 11px; color: var(--text-secondary);
+  font-family: var(--font-mono);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block;
 }
+.prod-date.muted { color: var(--text-tertiary); }
+
+.card-qty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; min-width: 44px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 5px 10px;
+}
+.qty-num {
+  font-size: 20px; font-weight: 600;
+  font-family: var(--font-mono); color: var(--text-primary);
+  line-height: 1;
+}
+.qty-lbl {
+  font-size: 10px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: .5px; margin-top: 1px;
+}
+
 .badge {
   font-size: 11px; padding: 2px 8px;
   border-radius: 20px; font-weight: 500;
@@ -217,9 +260,8 @@ body {
 .badge.vencido { background: var(--red-light);   color: var(--red-dark); }
 .badge.pronto  { background: var(--amber-light);  color: #8a4a00; }
 .badge.ok      { background: var(--green-light);  color: #1a6b38; }
-.prod-date { font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); }
 
-.prod-actions { display: flex; gap: 4px; align-items: center; }
+.prod-actions { display: flex; gap: 2px; align-items: center; }
 .icon-btn {
   background: none; border: none; cursor: pointer;
   color: var(--text-tertiary); font-size: 17px;
@@ -929,30 +971,37 @@ function renderList() {
   }
 
   list.innerHTML = filtrados.map(p => {
-    const est = getEstado(p.FechaVenc);
-    const bl  = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
-    const img = p.ImagenURL
-      ? `<img src="${p.ImagenURL}" alt="" style="width:48px;height:48px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
-      : `<div style="width:48px;height:48px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:20px"><i class="ti ti-box"></i></div>`;
+    const est   = getEstado(p.FechaVenc);
+    const bl    = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
+    const img   = p.ImagenURL
+      ? `<img src="${p.ImagenURL}" alt="" class="card-img">`
+      : `<div class="card-img card-img-placeholder"><i class="ti ti-box"></i></div>`;
+    const fechaLine = p.FechaVenc
+      ? `<span class="prod-date">${fmtF(p.FechaVenc)} · ${diasLabel(p.FechaVenc)}</span>`
+      : `<span class="prod-date muted">Sin fecha de vencimiento</span>`;
+
     return `<div class="product-card ${est}">
-      ${img}
-      <div class="prod-info">
-        <div class="prod-name">${p.Nombre}</div>
-        <div class="prod-meta">
-          <span>${p['Categoría'] || ''}</span>
-          ${p['Ubicación'] ? `<span><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px"></i> ${p['Ubicación']}</span>` : ''}
-          <span>×${p.Cantidad}</span>
-        </div>
-        <div class="prod-footer">
-          <span class="badge ${est}">${bl}</span>
-          ${p.FechaVenc
-            ? `<span class="prod-date">${fmtF(p.FechaVenc)} · ${diasLabel(p.FechaVenc)}</span>`
-            : `<span class="prod-date" style="color:var(--text-tertiary)">Sin fecha</span>`}
+      <div class="card-top">
+        <span class="badge ${est}">${bl}</span>
+        <div class="prod-actions">
+          <button class="icon-btn" onclick="editProducto('${p.ID}')" title="Editar"><i class="ti ti-edit"></i></button>
+          <button class="icon-btn" onclick="eliminarProducto('${p.ID}')" title="Eliminar"><i class="ti ti-trash"></i></button>
         </div>
       </div>
-      <div class="prod-actions">
-        <button class="icon-btn" onclick="editProducto('${p.ID}')" title="Editar"><i class="ti ti-edit"></i></button>
-        <button class="icon-btn" onclick="eliminarProducto('${p.ID}')" title="Eliminar"><i class="ti ti-trash"></i></button>
+      <div class="card-body">
+        ${img}
+        <div class="card-main">
+          <div class="prod-name">${p.Nombre}</div>
+          <div class="prod-meta">
+            <span>${p['Categoría'] || ''}</span>
+            ${p['Ubicación'] ? `<span><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px"></i> ${p['Ubicación']}</span>` : ''}
+          </div>
+          ${fechaLine}
+        </div>
+        <div class="card-qty">
+          <span class="qty-num">${p.Cantidad}</span>
+          <span class="qty-lbl">uds</span>
+        </div>
       </div>
     </div>`;
   }).join('');
