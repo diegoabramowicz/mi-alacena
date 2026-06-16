@@ -457,6 +457,47 @@ input:focus, select:focus {
 /* ── Sections ─────────────────────────────── */
 .page { display: none; }
 .page.active { display: block; }
+
+/* ── Modal de edición ─────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 200;
+  align-items: flex-end; justify-content: center;
+  padding: 0;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  width: 100%; max-width: 480px;
+  max-height: 92vh; overflow-y: auto;
+  padding: 0 1.25rem 2rem;
+  animation: slideUp .22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border-mid); border-radius: 2px;
+  margin: 12px auto 1.25rem;
+}
+.modal-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.modal-title {
+  font-size: 16px; font-weight: 600; color: var(--text-primary);
+}
+.modal-close {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 50%; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-secondary); font-size: 16px;
+}
+.modal-close:hover { background: var(--border); }
 </style>
 </head>
 <body>
@@ -1366,11 +1407,86 @@ async function saveManual() {
   }
 }
 
+// ─────────────────────────────────────────────
+//  MODAL EDICIÓN
+// ─────────────────────────────────────────────
+let editQty = 1;
+
+function openEditModal(p) {
+  editId  = p.ID;
+  editQty = parseInt(p.Cantidad) || 1;
+
+  document.getElementById('edit-nombre').value  = p.Nombre || '';
+  document.getElementById('edit-fecha').value   = p.FechaVenc || '';
+  document.getElementById('edit-barcode').value = p.Barcode || '';
+  document.getElementById('qty-edit').textContent = editQty;
+
+  // Llenar selects con categorías y ubicaciones
+  const catSel = document.getElementById('edit-cat');
+  catSel.innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (p['Categoría']) catSel.value = p['Categoría'];
+
+  const ubicSel = document.getElementById('edit-ubic');
+  ubicSel.innerHTML = '<option value="">— Sin ubicación —</option>' +
+    ubicaciones.map(u => `<option value="${u}">${u}</option>`).join('');
+  if (p['Ubicación']) ubicSel.value = p['Ubicación'];
+
+  // Preview imagen
+  const preview = document.getElementById('modal-preview');
+  if (p.ImagenURL) {
+    document.getElementById('modal-preview-img').src = p.ImagenURL;
+    document.getElementById('modal-preview-name').textContent = p.Nombre;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+
+  document.getElementById('edit-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal(e) {
+  if (e && e.target !== document.getElementById('edit-modal')) return;
+  document.getElementById('edit-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  editId = null;
+}
+
+async function saveEdit() {
+  const nombre = document.getElementById('edit-nombre').value.trim();
+  if (!nombre) { showToast('Ingresá el nombre del producto'); return; }
+
+  const btn = document.querySelector('#edit-modal .btn.primary');
+  btn.disabled = true;
+  setLoading(true, 'Guardando cambios...');
+  try {
+    await apiPost({
+      accion:    'editar',
+      id:        editId,
+      nombre,
+      categoria: document.getElementById('edit-cat').value,
+      ubicacion: document.getElementById('edit-ubic').value,
+      cantidad:  editQty,
+      fechaVenc: document.getElementById('edit-fecha').value,
+      barcode:   document.getElementById('edit-barcode').value.trim(),
+    });
+    await fetchProductos();
+    renderList();
+    showToast('✓ Producto actualizado');
+    document.getElementById('edit-modal').classList.remove('active');
+    document.body.style.overflow = '';
+    editId = null;
+  } catch (e) {
+    showToast('Error al guardar');
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
+  }
+}
+
 function editProducto(id) {
   const p = productos.find(x => x.ID === id);
-  if (!p) return;
-  showPage('manual');
-  fillManualFromProduct(p);
+  if (p) openEditModal(p);
 }
 
 async function eliminarProducto(id) {
@@ -1406,6 +1522,9 @@ function changeQty(d, ctx) {
   if (ctx === 'scan') {
     qtyScan = Math.max(1, qtyScan + d);
     updateQtyDisplay();
+  } else if (ctx === 'edit') {
+    editQty = Math.max(1, editQty + d);
+    document.getElementById('qty-edit').textContent = editQty;
   } else {
     qtyManual = Math.max(1, qtyManual + d);
     document.getElementById('qty-manual').textContent = qtyManual;
@@ -1594,5 +1713,60 @@ async function init() {
 
 init();
 </script>
+<!-- ══════════════ MODAL EDICIÓN ══════════════ -->
+<div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Editar producto</div>
+      <button class="modal-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div id="modal-preview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;display:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img id="modal-preview-img" src="" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">
+        <div style="font-size:14px;font-weight:500;color:var(--text-primary)" id="modal-preview-name"></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Nombre del producto</label>
+      <input type="text" id="edit-nombre" placeholder="Nombre">
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Categoría</label>
+        <select id="edit-cat"></select>
+      </div>
+      <div>
+        <label>Ubicación</label>
+        <select id="edit-ubic"></select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Fecha de vencimiento</label>
+        <input type="date" id="edit-fecha">
+      </div>
+      <div>
+        <label>Cantidad</label>
+        <div class="qty-control" style="margin-top:5px">
+          <button class="qty-btn" onclick="changeQty(-1,'edit')">−</button>
+          <span class="qty-val" id="qty-edit">1</span>
+          <button class="qty-btn" onclick="changeQty(1,'edit')">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Código de barras</label>
+      <input type="text" id="edit-barcode" inputmode="numeric">
+    </div>
+    <button class="btn primary" onclick="saveEdit()">
+      <i class="ti ti-check"></i> Guardar cambios
+    </button>
+    <button class="btn ghost" onclick="closeEditModal()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
 </body>
 </html>
