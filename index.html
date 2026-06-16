@@ -237,20 +237,18 @@ body {
 .prod-date.muted { color: var(--text-tertiary); }
 
 .card-qty {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  flex-shrink: 0; min-width: 44px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
   background: var(--bg); border: 1px solid var(--border);
   border-radius: var(--radius-md); padding: 5px 10px;
 }
 .qty-num {
-  font-size: 20px; font-weight: 600;
+  font-size: 16px; font-weight: 600;
   font-family: var(--font-mono); color: var(--text-primary);
   line-height: 1;
 }
 .qty-lbl {
-  font-size: 10px; color: var(--text-tertiary);
-  text-transform: uppercase; letter-spacing: .5px; margin-top: 1px;
+  display: none;
 }
 
 .badge {
@@ -999,8 +997,7 @@ function renderList() {
           ${fechaLine}
         </div>
         <div class="card-qty">
-          <span class="qty-num">${p.Cantidad}</span>
-          <span class="qty-lbl">uds</span>
+          <span class="qty-num">×${p.Cantidad}</span>
         </div>
       </div>
     </div>`;
