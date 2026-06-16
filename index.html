@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.3/umd/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
 /* ── Reset & tokens ───────────────────────── */
@@ -360,25 +360,7 @@ input:focus, select:focus {
 
 #video-wrap {
   display: none; border-radius: var(--radius-lg);
-  overflow: hidden; position: relative; margin-bottom: 1rem;
-}
-#scan-video { width: 100%; display: block; max-height: 230px; object-fit: cover; }
-.scan-reticle {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px; height: 100px;
-  border: 2px solid rgba(255,255,255,.9);
-  border-radius: 8px;
-  box-shadow: 0 0 0 2000px rgba(0,0,0,.4);
-}
-.scan-line {
-  position: absolute; top: 50%; left: 5%; right: 5%;
-  height: 2px; background: var(--red);
-  animation: scanline 2s ease-in-out infinite;
-}
-@keyframes scanline {
-  0%,100% { top: 30%; }
-  50% { top: 70%; }
+  overflow: hidden; margin-bottom: 1rem;
 }
 
 /* ── Found / New cards ────────────────────── */
@@ -514,16 +496,13 @@ input:focus, select:focus {
       <!-- scanning -->
       <div id="scan-scanning" class="form-section">
         <div id="video-wrap">
-          <video id="scan-video" autoplay playsinline muted></video>
-          <div class="scan-reticle">
-            <div class="scan-line"></div>
-          </div>
+          <div id="scan-video" style="width:100%"></div>
         </div>
         <button class="btn" onclick="stopScan()">
           <i class="ti ti-player-stop"></i> Detener cámara
         </button>
         <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-top:.75rem">
-          Centrá el código de barras en el recuadro blanco
+          Centrá el código de barras frente a la cámara
         </p>
       </div>
 
@@ -1161,27 +1140,44 @@ async function startScan() {
   setScanState('scanning');
   document.getElementById('video-wrap').style.display = 'block';
   try {
-    if (typeof ZXing === 'undefined') {
-      showToast('Librería de escaneo no disponible'); goIdleScan(); return;
-    }
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    scanner = codeReader; scanning = true;
-    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-    const back    = devices.find(d =>
-      d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera')
-    ) || devices[devices.length - 1];
+    scanner = new Html5Qrcode('scan-video');
+    scanning = true;
 
-    await codeReader.decodeFromVideoDevice(back?.deviceId, 'scan-video', (result, err) => {
-      if (result) { stopScan(); lookupBarcode(result.getText()); }
-    });
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 150 },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+      ]
+    };
+
+    await scanner.start(
+      { facingMode: 'environment' },
+      config,
+      (decodedText) => {
+        stopScan();
+        lookupBarcode(decodedText);
+      },
+      (errorMsg) => { /* errores de frame, ignorar */ }
+    );
   } catch (e) {
+    console.error('Scanner error:', e);
     goIdleScan();
-    showToast('No se pudo acceder a la cámara');
+    showToast('No se pudo acceder a la cámara: ' + (e.message || e));
   }
 }
 
-function stopScan() {
-  if (scanner) { try { scanner.reset(); } catch (e) {} scanner = null; }
+async function stopScan() {
+  if (scanner) {
+    try { await scanner.stop(); } catch (e) {}
+    try { scanner.clear(); } catch (e) {}
+    scanner = null;
+  }
   scanning = false;
   document.getElementById('video-wrap').style.display = 'none';
 }
