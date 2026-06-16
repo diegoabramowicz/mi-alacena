@@ -600,7 +600,7 @@ input:focus, select:focus {
             </div>
             <div>
               <label>Ubicación</label>
-              <input type="text" id="new-ubic" placeholder="Alacena alta">
+              <select id="new-ubic"></select>
             </div>
           </div>
           <hr class="divider">
@@ -680,7 +680,7 @@ input:focus, select:focus {
             </div>
             <div>
               <label>Ubicación</label>
-              <input type="text" id="m-ubic" placeholder="Alacena baja">
+              <select id="m-ubic"></select>
             </div>
           </div>
           <div class="form-grid">
@@ -830,6 +830,19 @@ function setLoading(show, text = 'Cargando productos...') {
 // ─────────────────────────────────────────────
 //  API
 // ─────────────────────────────────────────────
+function normalizarFecha(val) {
+  if (!val) return '';
+  // Si ya es YYYY-MM-DD lo devolvemos tal cual
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  // Si viene como ISO string o Date de Sheets, extraemos solo la fecha local
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 async function fetchProductos() {
   setSyncStatus('syncing');
   try {
@@ -842,7 +855,7 @@ async function fetchProductos() {
       'Categoría': p['Categoría'] || '',
       'Ubicación': p['Ubicación'] || '',
       Cantidad:   p.Cantidad   || 1,
-      FechaVenc:  p['Fecha venc.'] || p.FechaVenc || '',
+      FechaVenc:  normalizarFecha(p['Fecha venc.'] || p.FechaVenc || ''),
       Barcode:    String(p['Código barras'] || p.Barcode || ''),
       Agregado:   p.Agregado   || '',
       ImagenURL:  p.ImagenURL  || ''
@@ -869,6 +882,16 @@ function renderSelects() {
     if (current && categorias.includes(current)) el.value = current;
   });
 
+  // Dropdowns de ubicación
+  ['new-ubic', 'm-ubic'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const current = el.value;
+    el.innerHTML = '<option value="">— Sin ubicación —</option>' +
+      ubicaciones.map(u => `<option value="${u}">${u}</option>`).join('');
+    if (current) el.value = current;
+  });
+
   // Filter de categoría en inventario
   const fc = document.getElementById('filter-cat');
   if (fc) {
@@ -877,17 +900,6 @@ function renderSelects() {
       categorias.map(c => `<option value="${c}">${c}</option>`).join('');
     if (current) fc.value = current;
   }
-
-  // Datalists de ubicación
-  ['new-ubic', 'm-ubic'].forEach(id => {
-    const input = document.getElementById(id);
-    if (!input) return;
-    const listId = id + '-list';
-    let dl = document.getElementById(listId);
-    if (!dl) { dl = document.createElement('datalist'); dl.id = listId; document.body.appendChild(dl); }
-    dl.innerHTML = ubicaciones.map(u => `<option value="${u}">`).join('');
-    input.setAttribute('list', listId);
-  });
 
   renderSettingsLists();
 }
@@ -1127,7 +1139,7 @@ async function saveNew() {
       accion:    'agregar',
       nombre,
       categoria: document.getElementById('new-cat').value,
-      ubicacion: document.getElementById('new-ubic').value.trim(),
+      ubicacion: document.getElementById('new-ubic').value,
       cantidad:  qtyScan,
       fechaVenc: document.getElementById('new-fecha').value,
       barcode:   currentBC,
@@ -1288,7 +1300,7 @@ async function saveManual() {
     const payload = {
       nombre,
       categoria: document.getElementById('m-cat').value,
-      ubicacion: document.getElementById('m-ubic').value.trim(),
+      ubicacion: document.getElementById('m-ubic').value,
       cantidad:  qtyManual,
       fechaVenc: document.getElementById('m-fecha').value,
       barcode:   document.getElementById('m-barcode').value.trim(),
