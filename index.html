@@ -241,7 +241,9 @@ body {
   flex-shrink: 0;
   background: var(--bg); border: 1px solid var(--border);
   border-radius: var(--radius-md); padding: 5px 10px;
+  transition: background .12s, border-color .12s;
 }
+.card-qty:active { background: var(--border); border-color: var(--border-mid); }
 .qty-num {
   font-size: 16px; font-weight: 600;
   font-family: var(--font-mono); color: var(--text-primary);
@@ -489,6 +491,77 @@ input:focus, select:focus {
   position: relative;
   transition: transform .22s cubic-bezier(.25,.46,.45,.94);
   will-change: transform;
+}
+
+/* ── Modal cantidad rápida ────────────────── */
+.qty-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 300;
+  align-items: flex-end; justify-content: center;
+}
+.qty-modal-overlay.active { display: flex; }
+.qty-modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  width: 100%; max-width: 480px;
+  padding: 0 1.5rem 2.5rem;
+  animation: slideUp .2s ease;
+}
+.qty-modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border-mid); border-radius: 2px;
+  margin: 12px auto 1.25rem;
+}
+.qty-modal-product {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.qty-modal-product img,
+.qty-modal-product-placeholder {
+  width: 44px; height: 44px; object-fit: contain;
+  border-radius: 8px; background: var(--bg);
+  border: 1px solid var(--border); flex-shrink: 0;
+}
+.qty-modal-product-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 20px;
+}
+.qty-modal-name {
+  font-size: 15px; font-weight: 500; color: var(--text-primary);
+}
+.qty-modal-cat {
+  font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+}
+.qty-input-wrap {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.qty-big-btn {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--bg); cursor: pointer;
+  font-size: 22px; font-weight: 300;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-primary); flex-shrink: 0;
+  transition: background .1s, border-color .1s;
+}
+.qty-big-btn:hover { background: var(--border); }
+.qty-big-btn.red  { background: var(--red-light); border-color: var(--red); color: var(--red); }
+.qty-big-btn.green{ background: var(--green-light); border-color: var(--green); color: var(--green); }
+#qty-modal-input {
+  flex: 1; text-align: center;
+  font-size: 36px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 10px;
+  -moz-appearance: textfield;
+}
+#qty-modal-input::-webkit-outer-spin-button,
+#qty-modal-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+#qty-modal-input:focus {
+  outline: none; border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.1);
 }
 
 /* ── Modal de edición ─────────────────────── */
@@ -1081,7 +1154,7 @@ function renderList() {
             </div>
             ${fechaLine}
           </div>
-          <div class="card-qty">
+          <div class="card-qty" onclick="openQtyModal('${p.ID}')" title="Cambiar cantidad" style="cursor:pointer">
             <span class="qty-num" id="qty-${p.ID}">×${p.Cantidad}</span>
           </div>
         </div>
@@ -1561,6 +1634,95 @@ async function saveManual() {
 }
 
 // ─────────────────────────────────────────────
+//  MODAL CANTIDAD RÁPIDA
+// ─────────────────────────────────────────────
+let qtyModalId = null;
+
+function openQtyModal(id) {
+  const p = productos.find(x => x.ID === id);
+  if (!p) return;
+
+  // Cerrar swipe si está abierto
+  const wrap = document.getElementById(`sw-${id}`);
+  if (wrap && wrap.classList.contains('open')) closeSwipe(wrap);
+
+  qtyModalId = id;
+  const input = document.getElementById('qty-modal-input');
+  input.value = parseInt(p.Cantidad) || 0;
+
+  // Preview del producto
+  const preview = document.getElementById('qty-modal-product');
+  const imgEl   = p.ImagenURL
+    ? `<img src="${p.ImagenURL}" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
+    : `<div class="qty-modal-product-placeholder"><i class="ti ti-box"></i></div>`;
+  preview.innerHTML = `
+    ${imgEl}
+    <div>
+      <div class="qty-modal-name">${p.Nombre}</div>
+      <div class="qty-modal-cat">${p['Categoría'] || ''}${p['Ubicación'] ? ' · ' + p['Ubicación'] : ''}</div>
+    </div>`;
+
+  document.getElementById('qty-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  // Focus al input con pequeño delay para que el modal termine de animarse
+  setTimeout(() => { input.focus(); input.select(); }, 250);
+}
+
+function closeQtyModal(e) {
+  if (e && e.target !== document.getElementById('qty-modal')) return;
+  document.getElementById('qty-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  qtyModalId = null;
+}
+
+function stepQtyModal(d) {
+  const input = document.getElementById('qty-modal-input');
+  input.value = Math.max(0, (parseInt(input.value) || 0) + d);
+}
+
+async function saveQtyModal() {
+  if (!qtyModalId) return;
+  const p = productos.find(x => x.ID === qtyModalId);
+  if (!p) return;
+
+  const nuevaCantidad = Math.max(0, parseInt(document.getElementById('qty-modal-input').value) || 0);
+  const anterior = parseInt(p.Cantidad);
+
+  // Cerrar modal y actualizar UI inmediatamente
+  document.getElementById('qty-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  p.Cantidad = nuevaCantidad;
+  const qtyEl = document.getElementById(`qty-${qtyModalId}`);
+  if (qtyEl) qtyEl.textContent = `×${nuevaCantidad}`;
+
+  const id = qtyModalId;
+  qtyModalId = null;
+
+  try {
+    await apiPost({
+      accion:    'editar',
+      id:        p.ID,
+      nombre:    p.Nombre,
+      categoria: p['Categoría'],
+      ubicacion: p['Ubicación'],
+      cantidad:  nuevaCantidad,
+      fechaVenc: p.FechaVenc,
+      barcode:   p.Barcode,
+      imagenURL: p.ImagenURL
+    });
+    const diff = nuevaCantidad - anterior;
+    const msg  = diff === 0 ? 'Sin cambios'
+      : diff > 0 ? `+${diff} · total ${nuevaCantidad}`
+      : `${diff} · quedan ${nuevaCantidad}`;
+    showToast(msg);
+  } catch (e) {
+    p.Cantidad = anterior;
+    if (qtyEl) qtyEl.textContent = `×${anterior}`;
+    showToast('Error al guardar');
+  }
+}
+
+// ─────────────────────────────────────────────
 //  MODAL EDICIÓN
 // ─────────────────────────────────────────────
 let editQty = 1;
@@ -1866,6 +2028,23 @@ async function init() {
 
 init();
 </script>
+<!-- ══════════════ MODAL CANTIDAD ══════════════ -->
+<div class="qty-modal-overlay" id="qty-modal" onclick="closeQtyModal(event)">
+  <div class="qty-modal">
+    <div class="qty-modal-handle"></div>
+    <div class="qty-modal-product" id="qty-modal-product"></div>
+    <div class="qty-input-wrap">
+      <button class="qty-big-btn red" onclick="stepQtyModal(-1)">−</button>
+      <input type="number" id="qty-modal-input" inputmode="numeric" min="0" value="1">
+      <button class="qty-big-btn green" onclick="stepQtyModal(1)">+</button>
+    </div>
+    <button class="btn primary" onclick="saveQtyModal()">
+      <i class="ti ti-check"></i> Confirmar cantidad
+    </button>
+    <button class="btn ghost" onclick="closeQtyModal()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
 <!-- ══════════════ MODAL EDICIÓN ══════════════ -->
 <div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
   <div class="modal">
