@@ -460,6 +460,39 @@ input:focus, select:focus {
 .page { display: none; }
 .page.active { display: block; }
 
+/* ── Lotes dentro de cards ────────────────── */
+.lotes-wrap {
+  margin-top: 6px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.lote-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+}
+.lote-row.muted { color: var(--text-tertiary); }
+.lote-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.lote-dot.vencido { background: var(--red); }
+.lote-dot.pronto  { background: var(--amber); }
+.lote-dot.ok      { background: var(--green); }
+.lote-qty {
+  font-family: var(--font-mono); font-weight: 600;
+  color: var(--text-primary); flex-shrink: 0;
+}
+.lote-fecha {
+  color: var(--text-secondary); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lote-edit-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 13px;
+  padding: 2px 4px; border-radius: 4px; flex-shrink: 0;
+  line-height: 1;
+  transition: background .1s, color .1s;
+}
+.lote-edit-btn:hover { background: var(--bg); color: var(--text-primary); }
+
 /* ── Swipe consumo rápido ─────────────────── */
 .swipe-wrap {
   position: relative;
@@ -492,6 +525,35 @@ input:focus, select:focus {
   transition: transform .22s cubic-bezier(.25,.46,.45,.94);
   will-change: transform;
 }
+
+/* ── Lotes dentro de la card ──────────────── */
+.lotes-wrap {
+  margin-top: 5px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.lote-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.lote-row.muted { color: var(--text-tertiary); font-style: italic; }
+.lote-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.lote-dot.vencido { background: var(--red); }
+.lote-dot.pronto  { background: var(--amber); }
+.lote-dot.ok      { background: var(--green); }
+.lote-qty {
+  font-family: var(--font-mono); font-weight: 600;
+  color: var(--text-primary); flex-shrink: 0;
+}
+.lote-fecha { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lote-edit-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 13px;
+  padding: 2px 4px; border-radius: 4px; flex-shrink: 0;
+  transition: color .1s;
+}
+.lote-edit-btn:hover { color: var(--text-primary); }
 
 /* ── Modal cantidad rápida ────────────────── */
 .qty-modal-overlay {
@@ -932,12 +994,13 @@ input:focus, select:focus {
 // ─────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────
-const API_URL = 'https://script.google.com/macros/s/AKfycbyR-D5rfK782x-2Mhr9HyuqF49zOAJtTNAMd1VYJKVir9ZtVJAWavD44tm8o9VOA6Wf/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw5hmIsIfOF8YLsKaZED_dQdQTWJ3QagbQ2HHjDsIJ_EWpbM3ndw4733hRMGdQG5jh2/exec';
 
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
 let productos     = [];
+let lotes         = [];
 let categorias    = [];
 let ubicaciones   = [];
 let qtyScan       = 1;
@@ -1014,17 +1077,20 @@ async function fetchProductos() {
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
-    // Normalizar nombres de columnas de Sheets al formato interno
     productos = (data.productos || []).map(p => ({
-      ID:         p.ID         || '',
-      Nombre:     p.Nombre     || '',
+      ID:          p.ID          || '',
+      Nombre:      p.Nombre      || '',
       'Categoría': p['Categoría'] || '',
       'Ubicación': p['Ubicación'] || '',
-      Cantidad:   p.Cantidad   || 1,
-      FechaVenc:  normalizarFecha(p['Fecha venc.'] || p.FechaVenc || ''),
-      Barcode:    String(p['Código barras'] || p.Barcode || ''),
-      Agregado:   p.Agregado   || '',
-      ImagenURL:  p.ImagenURL  || ''
+      Barcode:     String(p['Código barras'] || p.Barcode || ''),
+      Agregado:    p.Agregado    || '',
+      ImagenURL:   p.ImagenURL   || ''
+    }));
+    lotes = (data.lotes || []).map(l => ({
+      LoteID:     l.LoteID     || '',
+      ProductoID: l.ProductoID || '',
+      Cantidad:   parseInt(l.Cantidad) || 0,
+      FechaVenc:  normalizarFecha(l.FechaVenc || '')
     }));
     categorias  = data.categorias  || [];
     ubicaciones = data.ubicaciones || [];
@@ -1036,6 +1102,32 @@ async function fetchProductos() {
     showToast('Error al conectar con Sheets');
     return false;
   }
+}
+
+// ─── Helpers de lotes ─────────────────────────
+function lotesDeProducto(id) {
+  return lotes
+    .filter(l => l.ProductoID === id && l.Cantidad > 0)
+    .sort((a, b) => {
+      if (!a.FechaVenc && !b.FechaVenc) return 0;
+      if (!a.FechaVenc) return 1;
+      if (!b.FechaVenc) return -1;
+      return a.FechaVenc.localeCompare(b.FechaVenc);
+    });
+}
+
+function totalCantidad(id) {
+  return lotes.filter(l => l.ProductoID === id).reduce((s, l) => s + (parseInt(l.Cantidad) || 0), 0);
+}
+
+function estadoProducto(id) {
+  const ls = lotesDeProducto(id);
+  if (!ls.length) return 'ok';
+  // El estado más urgente de todos los lotes con fecha
+  const estados = ls.filter(l => l.FechaVenc).map(l => getEstado(l.FechaVenc));
+  if (estados.includes('vencido')) return 'vencido';
+  if (estados.includes('pronto'))  return 'pronto';
+  return 'ok';
 }
 
 function renderSelects() {
@@ -1090,22 +1182,24 @@ function renderList() {
   const list = document.getElementById('product-list');
 
   let filtrados = productos.filter(p => {
-    if (fe && getEstado(p.FechaVenc) !== fe) return false;
-    if (fc && p['Categoría'] !== fc)          return false;
+    if (fe && estadoProducto(p.ID) !== fe) return false;
+    if (fc && p['Categoría'] !== fc)        return false;
     return true;
   });
 
   filtrados.sort((a, b) => {
     const ord = { vencido: 0, pronto: 1, ok: 2 };
-    const d   = ord[getEstado(a.FechaVenc)] - ord[getEstado(b.FechaVenc)];
+    const d   = ord[estadoProducto(a.ID)] - ord[estadoProducto(b.ID)];
     if (d !== 0) return d;
-    if (a.FechaVenc && b.FechaVenc) return a.FechaVenc.localeCompare(b.FechaVenc);
-    return 0;
+    // Por fecha del lote más próximo
+    const fa = lotesDeProducto(a.ID)[0]?.FechaVenc || '';
+    const fb = lotesDeProducto(b.ID)[0]?.FechaVenc || '';
+    return fa.localeCompare(fb);
   });
 
   document.getElementById('stat-total').textContent   = productos.length;
-  document.getElementById('stat-pronto').textContent  = productos.filter(p => getEstado(p.FechaVenc) === 'pronto').length;
-  document.getElementById('stat-vencido').textContent = productos.filter(p => getEstado(p.FechaVenc) === 'vencido').length;
+  document.getElementById('stat-pronto').textContent  = productos.filter(p => estadoProducto(p.ID) === 'pronto').length;
+  document.getElementById('stat-vencido').textContent = productos.filter(p => estadoProducto(p.ID) === 'vencido').length;
 
   if (!filtrados.length) {
     list.innerHTML = `<div class="empty">
@@ -1116,31 +1210,43 @@ function renderList() {
   }
 
   list.innerHTML = filtrados.map(p => {
-    const est   = getEstado(p.FechaVenc);
-    const bl    = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
-    const img   = p.ImagenURL
+    const est      = estadoProducto(p.ID);
+    const bl       = est === 'vencido' ? 'Vencido' : est === 'pronto' ? 'Por vencer' : 'OK';
+    const total    = totalCantidad(p.ID);
+    const pLotes   = lotesDeProducto(p.ID);
+    const img      = p.ImagenURL
       ? `<img src="${p.ImagenURL}" alt="" class="card-img">`
       : `<div class="card-img card-img-placeholder"><i class="ti ti-box"></i></div>`;
-    const fechaLine = p.FechaVenc
-      ? `<span class="prod-date">${fmtF(p.FechaVenc)} · ${diasLabel(p.FechaVenc)}</span>`
-      : `<span class="prod-date muted">Sin fecha de vencimiento</span>`;
+
+    // Líneas de lotes
+    const lotesHTML = pLotes.length
+      ? pLotes.map(l => {
+          const le  = getEstado(l.FechaVenc);
+          const lbl = l.FechaVenc ? `${fmtF(l.FechaVenc)} · ${diasLabel(l.FechaVenc)}` : 'Sin fecha';
+          return `<div class="lote-row">
+            <span class="lote-dot ${le}"></span>
+            <span class="lote-qty">×${l.Cantidad}</span>
+            <span class="lote-fecha">${lbl}</span>
+            <button class="lote-edit-btn" onclick="openLoteModal('${p.ID}','${l.LoteID}')"><i class="ti ti-pencil"></i></button>
+          </div>`;
+        }).join('')
+      : `<div class="lote-row muted"><span class="lote-fecha">Sin lotes — tocá + para agregar</span></div>`;
 
     return `<div class="swipe-wrap" id="sw-${p.ID}">
       <div class="swipe-actions">
         <button class="swipe-btn minus" onclick="consumirRapido('${p.ID}', -1)">
-          <i class="ti ti-minus"></i>
-          <span>−1</span>
+          <i class="ti ti-minus"></i><span>−1</span>
         </button>
         <button class="swipe-btn plus" onclick="consumirRapido('${p.ID}', 1)">
-          <i class="ti ti-plus"></i>
-          <span>+1</span>
+          <i class="ti ti-plus"></i><span>+1</span>
         </button>
       </div>
       <div class="product-card ${est}" id="card-${p.ID}">
         <div class="card-top">
           <span class="badge ${est}">${bl}</span>
           <div class="prod-actions">
-            <button class="icon-btn" onclick="editProducto('${p.ID}')" title="Editar"><i class="ti ti-edit"></i></button>
+            <button class="icon-btn" onclick="openLoteModal('${p.ID}', null)" title="Agregar lote"><i class="ti ti-circle-plus"></i></button>
+            <button class="icon-btn" onclick="editProducto('${p.ID}')" title="Editar producto"><i class="ti ti-edit"></i></button>
             <button class="icon-btn" onclick="eliminarProducto('${p.ID}')" title="Eliminar"><i class="ti ti-trash"></i></button>
           </div>
         </div>
@@ -1152,18 +1258,102 @@ function renderList() {
               <span>${p['Categoría'] || ''}</span>
               ${p['Ubicación'] ? `<span><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px"></i> ${p['Ubicación']}</span>` : ''}
             </div>
-            ${fechaLine}
+            <div class="lotes-wrap">${lotesHTML}</div>
           </div>
-          <div class="card-qty" onclick="openQtyModal('${p.ID}')" title="Cambiar cantidad" style="cursor:pointer">
-            <span class="qty-num" id="qty-${p.ID}">×${p.Cantidad}</span>
+          <div class="card-qty" onclick="openQtyModal('${p.ID}')" title="Cambiar cantidad total" style="cursor:pointer">
+            <span class="qty-num" id="qty-${p.ID}">×${total}</span>
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
 
-  // Activar swipe en cada card
   list.querySelectorAll('.swipe-wrap').forEach(wrap => initSwipe(wrap));
+}
+
+// ─────────────────────────────────────────────
+//  MODAL LOTE
+// ─────────────────────────────────────────────
+let loteModalProductoId = null;
+let loteModalLoteId     = null;
+let loteQty             = 1;
+
+function openLoteModal(productoId, loteId) {
+  const p = productos.find(x => x.ID === productoId);
+  if (!p) return;
+
+  loteModalProductoId = productoId;
+  loteModalLoteId     = loteId;
+
+  // Preview producto
+  const preview = document.getElementById('lote-modal-product');
+  const imgEl   = p.ImagenURL
+    ? `<img src="${p.ImagenURL}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
+    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:18px"><i class="ti ti-box"></i></div>`;
+  preview.innerHTML = `${imgEl}<div>
+    <div style="font-size:14px;font-weight:500;color:var(--text-primary)">${p.Nombre}</div>
+    <div style="font-size:12px;color:var(--text-secondary)">${p['Categoría'] || ''}${p['Ubicación'] ? ' · ' + p['Ubicación'] : ''}</div>
+  </div>`;
+
+  if (loteId) {
+    // Editar lote existente
+    const l = lotes.find(x => x.LoteID === loteId);
+    loteQty = l ? parseInt(l.Cantidad) || 1 : 1;
+    document.getElementById('lote-fecha').value  = l?.FechaVenc || '';
+    document.getElementById('lote-modal-title').textContent = 'Editar lote';
+    document.getElementById('lote-delete-btn').style.display = 'flex';
+  } else {
+    // Nuevo lote
+    loteQty = 1;
+    document.getElementById('lote-fecha').value  = '';
+    document.getElementById('lote-modal-title').textContent = 'Agregar lote';
+    document.getElementById('lote-delete-btn').style.display = 'none';
+  }
+  document.getElementById('qty-lote').textContent = loteQty;
+  document.getElementById('lote-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLoteModal(e) {
+  if (e && e.target !== document.getElementById('lote-modal')) return;
+  document.getElementById('lote-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  loteModalProductoId = null; loteModalLoteId = null;
+}
+
+async function saveLote() {
+  if (!loteModalProductoId) return;
+  const fecha = document.getElementById('lote-fecha').value;
+  const btn   = document.querySelector('#lote-modal .btn.primary');
+  btn.disabled = true;
+  setLoading(true, 'Guardando lote...');
+  try {
+    if (loteModalLoteId) {
+      await apiPost({ accion: 'editar_lote', loteId: loteModalLoteId, cantidad: loteQty, fechaVenc: fecha });
+      const l = lotes.find(x => x.LoteID === loteModalLoteId);
+      if (l) { l.Cantidad = loteQty; l.FechaVenc = fecha; }
+    } else {
+      const res = await apiPost({ accion: 'agregar_lote', productoId: loteModalProductoId, cantidad: loteQty, fechaVenc: fecha });
+      lotes.push({ LoteID: res.loteId, ProductoID: loteModalProductoId, Cantidad: loteQty, FechaVenc: fecha });
+    }
+    renderList();
+    showToast('✓ Lote guardado');
+    closeLoteModal();
+  } catch (err) { showToast('Error al guardar'); }
+  finally { setLoading(false); btn.disabled = false; }
+}
+
+async function deleteLote() {
+  if (!loteModalLoteId || !confirm('¿Eliminar este lote?')) return;
+  setLoading(true, 'Eliminando...');
+  try {
+    await apiPost({ accion: 'eliminar_lote', loteId: loteModalLoteId });
+    lotes = lotes.filter(l => l.LoteID !== loteModalLoteId);
+    renderList();
+    showToast('Lote eliminado');
+    closeLoteModal();
+  } catch (err) { showToast('Error al eliminar'); }
+  finally { setLoading(false); }
 }
 
 // ─────────────────────────────────────────────
@@ -1236,38 +1426,29 @@ document.addEventListener('touchstart', e => {
 }, { passive: true });
 
 async function consumirRapido(id, delta) {
-  const p = productos.find(x => x.ID === id);
-  if (!p) return;
-  const nuevaCantidad = Math.max(0, parseInt(p.Cantidad) + delta);
+  const pLotes = lotesDeProducto(id);
+  if (!pLotes.length && delta < 0) { showToast('Sin lotes registrados'); return; }
 
-  // Actualizar UI inmediatamente (optimistic update)
-  p.Cantidad = nuevaCantidad;
-  const qtyEl = document.getElementById(`qty-${id}`);
-  if (qtyEl) qtyEl.textContent = `×${nuevaCantidad}`;
-
-  // Cerrar swipe
-  const wrap = document.getElementById(`sw-${id}`);
-  if (wrap) closeSwipe(wrap);
-
-  // Guardar en Sheets
-  try {
-    await apiPost({
-      accion:    'editar',
-      id:        p.ID,
-      nombre:    p.Nombre,
-      categoria: p['Categoría'],
-      ubicacion: p['Ubicación'],
-      cantidad:  nuevaCantidad,
-      fechaVenc: p.FechaVenc,
-      barcode:   p.Barcode,
-      imagenURL: p.ImagenURL
-    });
-    showToast(delta < 0 ? `−1 · quedan ${nuevaCantidad}` : `+1 · total ${nuevaCantidad}`);
-  } catch (e) {
-    // Revertir si falla
-    p.Cantidad = parseInt(p.Cantidad) - delta;
-    if (qtyEl) qtyEl.textContent = `×${p.Cantidad}`;
-    showToast('Error al guardar');
+  // Restar del lote más próximo a vencer / sin fecha primero
+  if (delta < 0) {
+    const lote = pLotes[0];
+    if (!lote || lote.Cantidad <= 0) { showToast('Sin stock'); return; }
+    const nuevaCantidad = Math.max(0, lote.Cantidad + delta);
+    lote.Cantidad = nuevaCantidad;
+    const wrap = document.getElementById(`sw-${id}`);
+    if (wrap) closeSwipe(wrap);
+    const qtyEl = document.getElementById(`qty-${id}`);
+    if (qtyEl) qtyEl.textContent = `×${totalCantidad(id)}`;
+    renderList();
+    try {
+      await apiPost({ accion: 'editar_lote', loteId: lote.LoteID, cantidad: nuevaCantidad, fechaVenc: lote.FechaVenc });
+      showToast(`−1 · quedan ${totalCantidad(id)}`);
+    } catch (e) { lote.Cantidad -= delta; renderList(); showToast('Error al guardar'); }
+  } else {
+    // Sumar: abrir modal de lote para elegir a qué lote sumar
+    const wrap = document.getElementById(`sw-${id}`);
+    if (wrap) closeSwipe(wrap);
+    openLoteModal(id, pLotes.length === 1 ? pLotes[0].LoteID : null);
   }
 }
 
@@ -1781,8 +1962,6 @@ async function saveEdit() {
       nombre,
       categoria: document.getElementById('edit-cat').value,
       ubicacion: document.getElementById('edit-ubic').value,
-      cantidad:  editQty,
-      fechaVenc: document.getElementById('edit-fecha').value,
       barcode:   document.getElementById('edit-barcode').value.trim(),
     });
     await fetchProductos();
@@ -1840,6 +2019,9 @@ function changeQty(d, ctx) {
   } else if (ctx === 'edit') {
     editQty = Math.max(1, editQty + d);
     document.getElementById('qty-edit').textContent = editQty;
+  } else if (ctx === 'lote') {
+    loteQty = Math.max(1, loteQty + d);
+    document.getElementById('qty-lote').textContent = loteQty;
   } else {
     qtyManual = Math.max(1, qtyManual + d);
     document.getElementById('qty-manual').textContent = qtyManual;
@@ -2028,6 +2210,39 @@ async function init() {
 
 init();
 </script>
+<!-- ══════════════ MODAL LOTE ══════════════ -->
+<div class="modal-overlay" id="lote-modal" onclick="closeLoteModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="lote-modal-title">Agregar lote</div>
+      <button class="modal-close" onclick="closeLoteModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="lote-modal-product" style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)"></div>
+    <div class="form-grid">
+      <div>
+        <label>Cantidad</label>
+        <div class="qty-control" style="margin-top:5px">
+          <button class="qty-btn" onclick="changeQty(-1,'lote')">−</button>
+          <span class="qty-val" id="qty-lote">1</span>
+          <button class="qty-btn" onclick="changeQty(1,'lote')">+</button>
+        </div>
+      </div>
+      <div>
+        <label>Fecha de vencimiento</label>
+        <input type="date" id="lote-fecha">
+      </div>
+    </div>
+    <button class="btn primary" onclick="saveLote()">
+      <i class="ti ti-check"></i> Guardar lote
+    </button>
+    <button class="btn ghost" id="lote-delete-btn" onclick="deleteLote()" style="margin-top:8px;color:var(--red);display:none">
+      <i class="ti ti-trash"></i> Eliminar este lote
+    </button>
+    <button class="btn ghost" onclick="closeLoteModal()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
 <!-- ══════════════ MODAL CANTIDAD ══════════════ -->
 <div class="qty-modal-overlay" id="qty-modal" onclick="closeQtyModal(event)">
   <div class="qty-modal">
@@ -2073,20 +2288,6 @@ init();
       <div>
         <label>Ubicación</label>
         <select id="edit-ubic"></select>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div>
-        <label>Fecha de vencimiento</label>
-        <input type="date" id="edit-fecha">
-      </div>
-      <div>
-        <label>Cantidad</label>
-        <div class="qty-control" style="margin-top:5px">
-          <button class="qty-btn" onclick="changeQty(-1,'edit')">−</button>
-          <span class="qty-val" id="qty-edit">1</span>
-          <button class="qty-btn" onclick="changeQty(1,'edit')">+</button>
-        </div>
       </div>
     </div>
     <div class="form-row">
