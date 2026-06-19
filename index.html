@@ -500,32 +500,20 @@ input:focus, select:focus {
   border-radius: var(--radius-md); padding: .75rem 1rem;
 }
 
-/* ── Swipe consumo rápido ─────────────────── */
-.swipe-wrap {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+/* ── Botón descontar stock ────────────────── */
+.btn-descontar {
+  width: 100%; margin-top: .625rem;
+  padding: 8px; border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--red); font-weight: 500;
+  font-size: 13px; font-family: var(--font-body);
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center; gap: 6px;
+  transition: background .12s, border-color .12s;
 }
-.swipe-actions {
-  position: absolute; top: 0; right: 0; bottom: 0;
-  display: flex; align-items: stretch;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity .15s;
-}
-.swipe-wrap.open .swipe-actions { opacity: 1; }
-.swipe-btn {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 2px; width: 64px; border: none; cursor: pointer;
-  font-family: var(--font-body); font-size: 11px; font-weight: 600;
-  transition: filter .1s;
-}
-.swipe-btn:hover { filter: brightness(.92); }
-.swipe-btn i { font-size: 18px; }
-.swipe-btn.minus { background: var(--red);   color: #fff; }
-.swipe-btn.plus  { background: var(--green); color: #fff; }
+.btn-descontar:hover { background: var(--red-light); border-color: var(--red); }
+.btn-descontar:active { background: var(--red-light); }
 
 .product-card {
   position: relative;
@@ -1242,11 +1230,6 @@ function renderList() {
       : `<div class="lote-row muted"><span class="lote-fecha">Sin lotes — tocá + para agregar</span></div>`;
 
     return `<div class="swipe-wrap" id="sw-${p.ID}">
-      <div class="swipe-actions">
-        <button class="swipe-btn minus" onclick="consumirRapido('${p.ID}')">
-          <i class="ti ti-minus"></i><span>−1</span>
-        </button>
-      </div>
       <div class="product-card ${est}" id="card-${p.ID}">
         <div class="card-top">
           <span class="badge ${est}">${bl}</span>
@@ -1266,15 +1249,18 @@ function renderList() {
             </div>
             <div class="lotes-wrap">${lotesHTML}</div>
           </div>
-          <div class="card-qty" onclick="openConsumoModal('${p.ID}')" title="Consumir" style="cursor:pointer">
+          <div class="card-qty" title="Total" >
             <span class="qty-num" id="qty-${p.ID}">×${total}</span>
           </div>
         </div>
+        ${total > 0 ? `<button class="btn-descontar" onclick="openConsumoModal('${p.ID}')">
+          <i class="ti ti-minus"></i> Descontar stock
+        </button>` : ''}
       </div>
     </div>`;
   }).join('');
 
-  list.querySelectorAll('.swipe-wrap').forEach(wrap => initSwipe(wrap));
+  list.querySelectorAll('.swipe-wrap').forEach(wrap => wrap); // no-op, swipe eliminado
 }
 
 // ─────────────────────────────────────────────
@@ -1458,106 +1444,6 @@ async function confirmarConsumo() {
   } finally {
     setLoading(false);
     btn.disabled = false;
-  }
-}
-
-// ─────────────────────────────────────────────
-//  SWIPE & CONSUMO RÁPIDO
-// ─────────────────────────────────────────────
-const SWIPE_THRESHOLD = 40;
-const SWIPE_OPEN_X   = 72;
-let   activeSwipe    = null;
-
-function initSwipe(wrap) {
-  const card = wrap.querySelector('.product-card');
-  let startX = 0, startY = 0, currentX = 0, dragging = false, isHoriz = null;
-
-  card.addEventListener('touchstart', e => {
-    if (activeSwipe && activeSwipe !== wrap) closeSwipe(activeSwipe);
-    startX  = e.touches[0].clientX;
-    startY  = e.touches[0].clientY;
-    currentX = wrap.classList.contains('open') ? -SWIPE_OPEN_X : 0;
-    dragging = true; isHoriz = null;
-  }, { passive: true });
-
-  card.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    if (isHoriz === null) isHoriz = Math.abs(dx) > Math.abs(dy);
-    if (!isHoriz) return;
-    e.preventDefault();
-    const base = wrap.classList.contains('open') ? -SWIPE_OPEN_X : 0;
-    const next = Math.min(0, Math.max(-SWIPE_OPEN_X, base + dx));
-    card.style.transform = `translateX(${next}px)`;
-    card.style.transition = 'none';
-  }, { passive: false });
-
-  card.addEventListener('touchend', e => {
-    if (!dragging || !isHoriz) { dragging = false; return; }
-    dragging = false;
-    const dx   = e.changedTouches[0].clientX - startX;
-    const base = wrap.classList.contains('open') ? -SWIPE_OPEN_X : 0;
-    const moved = base + dx;
-    card.style.transition = '';
-    if (moved < -SWIPE_THRESHOLD) {
-      openSwipe(wrap);
-    } else {
-      closeSwipe(wrap);
-    }
-  });
-
-  // Click fuera cierra
-  card.addEventListener('click', () => {
-    if (wrap.classList.contains('open')) { closeSwipe(wrap); }
-  });
-}
-
-function openSwipe(wrap) {
-  wrap.querySelector('.product-card').style.transform = `translateX(-${SWIPE_OPEN_X}px)`;
-  wrap.classList.add('open');
-  activeSwipe = wrap;
-}
-
-function closeSwipe(wrap) {
-  wrap.querySelector('.product-card').style.transform = 'translateX(0)';
-  wrap.classList.remove('open');
-  if (activeSwipe === wrap) activeSwipe = null;
-}
-
-// Cerrar swipe abierto al tocar en otro lado
-document.addEventListener('touchstart', e => {
-  if (activeSwipe && !activeSwipe.contains(e.target)) closeSwipe(activeSwipe);
-}, { passive: true });
-
-async function consumirRapido(id) {
-  const pLotes = lotesDeProducto(id);
-  if (!pLotes.length) { showToast('Sin lotes registrados'); return; }
-  const lote = pLotes[0]; // El más próximo a vencer
-  if (lote.Cantidad <= 0) { showToast('Sin stock en este lote'); return; }
-
-  const nuevaCantidad = lote.Cantidad - 1;
-  const wrap = document.getElementById(`sw-${id}`);
-  if (wrap) closeSwipe(wrap);
-
-  // Update optimista
-  lote.Cantidad = nuevaCantidad;
-  renderList();
-
-  try {
-    if (nuevaCantidad === 0) {
-      await apiPost({ accion: 'eliminar_lote', loteId: lote.LoteID });
-      lotes = lotes.filter(l => l.LoteID !== lote.LoteID);
-      renderList();
-      showToast(`−1 · lote agotado`);
-    } else {
-      await apiPost({ accion: 'editar_lote', loteId: lote.LoteID, cantidad: nuevaCantidad, fechaVenc: lote.FechaVenc });
-      showToast(`−1 · quedan ${totalCantidad(id)}`);
-    }
-  } catch (e) {
-    lote.Cantidad += 1;
-    renderList();
-    showToast('Error al guardar');
   }
 }
 
