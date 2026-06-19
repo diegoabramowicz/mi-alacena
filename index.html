@@ -493,6 +493,13 @@ input:focus, select:focus {
 }
 .lote-edit-btn:hover { background: var(--bg); color: var(--text-primary); }
 
+/* ── Modal consumo ────────────────────────── */
+.consumo-lote-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: .75rem 1rem;
+}
+
 /* ── Swipe consumo rápido ─────────────────── */
 .swipe-wrap {
   position: relative;
@@ -697,7 +704,7 @@ input:focus, select:focus {
       <div class="stats">
         <div class="stat">
           <div class="stat-num" id="stat-total">—</div>
-          <div class="stat-lbl">Total</div>
+          <div class="stat-lbl" id="stat-total-lbl">Unidades</div>
         </div>
         <div class="stat">
           <div class="stat-num" style="color:var(--amber)" id="stat-pronto">—</div>
@@ -1197,7 +1204,9 @@ function renderList() {
     return fa.localeCompare(fb);
   });
 
-  document.getElementById('stat-total').textContent   = productos.length;
+  const totalUnidades = productos.reduce((sum, p) => sum + totalCantidad(p.ID), 0);
+  document.getElementById('stat-total').textContent   = totalUnidades;
+  document.getElementById('stat-total-lbl').textContent = 'unidades';
   document.getElementById('stat-pronto').textContent  = productos.filter(p => estadoProducto(p.ID) === 'pronto').length;
   document.getElementById('stat-vencido').textContent = productos.filter(p => estadoProducto(p.ID) === 'vencido').length;
 
@@ -1234,11 +1243,8 @@ function renderList() {
 
     return `<div class="swipe-wrap" id="sw-${p.ID}">
       <div class="swipe-actions">
-        <button class="swipe-btn minus" onclick="consumirRapido('${p.ID}', -1)">
+        <button class="swipe-btn minus" onclick="consumirRapido('${p.ID}')">
           <i class="ti ti-minus"></i><span>−1</span>
-        </button>
-        <button class="swipe-btn plus" onclick="consumirRapido('${p.ID}', 1)">
-          <i class="ti ti-plus"></i><span>+1</span>
         </button>
       </div>
       <div class="product-card ${est}" id="card-${p.ID}">
@@ -1260,7 +1266,7 @@ function renderList() {
             </div>
             <div class="lotes-wrap">${lotesHTML}</div>
           </div>
-          <div class="card-qty" onclick="openQtyModal('${p.ID}')" title="Cambiar cantidad total" style="cursor:pointer">
+          <div class="card-qty" onclick="openConsumoModal('${p.ID}')" title="Consumir" style="cursor:pointer">
             <span class="qty-num" id="qty-${p.ID}">×${total}</span>
           </div>
         </div>
@@ -1281,35 +1287,34 @@ let loteQty             = 1;
 function openLoteModal(productoId, loteId) {
   const p = productos.find(x => x.ID === productoId);
   if (!p) return;
-
   loteModalProductoId = productoId;
   loteModalLoteId     = loteId;
 
-  // Preview producto
-  const preview = document.getElementById('lote-modal-product');
-  const imgEl   = p.ImagenURL
+  const imgEl = p.ImagenURL
     ? `<img src="${p.ImagenURL}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
     : `<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:18px"><i class="ti ti-box"></i></div>`;
-  preview.innerHTML = `${imgEl}<div>
+  document.getElementById('lote-modal-product').innerHTML = `${imgEl}<div>
     <div style="font-size:14px;font-weight:500;color:var(--text-primary)">${p.Nombre}</div>
     <div style="font-size:12px;color:var(--text-secondary)">${p['Categoría'] || ''}${p['Ubicación'] ? ' · ' + p['Ubicación'] : ''}</div>
   </div>`;
 
   if (loteId) {
-    // Editar lote existente
+    // Editar lote: solo fecha
     const l = lotes.find(x => x.LoteID === loteId);
-    loteQty = l ? parseInt(l.Cantidad) || 1 : 1;
-    document.getElementById('lote-fecha').value  = l?.FechaVenc || '';
-    document.getElementById('lote-modal-title').textContent = 'Editar lote';
+    document.getElementById('lote-fecha').value = l?.FechaVenc || '';
+    document.getElementById('lote-modal-title').textContent = 'Editar fecha de lote';
+    document.getElementById('lote-qty-wrap').style.display = 'none';
     document.getElementById('lote-delete-btn').style.display = 'flex';
   } else {
-    // Nuevo lote
+    // Nuevo lote: cantidad + fecha
     loteQty = 1;
-    document.getElementById('lote-fecha').value  = '';
+    document.getElementById('qty-lote').textContent = loteQty;
+    document.getElementById('lote-fecha').value = '';
     document.getElementById('lote-modal-title').textContent = 'Agregar lote';
+    document.getElementById('lote-qty-wrap').style.display = 'flex';
     document.getElementById('lote-delete-btn').style.display = 'none';
   }
-  document.getElementById('qty-lote').textContent = loteQty;
+
   document.getElementById('lote-modal').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -1329,9 +1334,10 @@ async function saveLote() {
   setLoading(true, 'Guardando lote...');
   try {
     if (loteModalLoteId) {
-      await apiPost({ accion: 'editar_lote', loteId: loteModalLoteId, cantidad: loteQty, fechaVenc: fecha });
+      // Solo actualiza fecha
+      await apiPost({ accion: 'editar_lote', loteId: loteModalLoteId, fechaVenc: fecha });
       const l = lotes.find(x => x.LoteID === loteModalLoteId);
-      if (l) { l.Cantidad = loteQty; l.FechaVenc = fecha; }
+      if (l) l.FechaVenc = fecha;
     } else {
       const res = await apiPost({ accion: 'agregar_lote', productoId: loteModalProductoId, cantidad: loteQty, fechaVenc: fecha });
       lotes.push({ LoteID: res.loteId, ProductoID: loteModalProductoId, Cantidad: loteQty, FechaVenc: fecha });
@@ -1357,10 +1363,109 @@ async function deleteLote() {
 }
 
 // ─────────────────────────────────────────────
+//  MODAL CONSUMO
+// ─────────────────────────────────────────────
+let consumoProductoId  = null;
+let consumoDelta       = {};  // loteId → cantidad a restar
+
+function openConsumoModal(productoId) {
+  const p      = productos.find(x => x.ID === productoId);
+  const pLotes = lotesDeProducto(productoId);
+  if (!p || !pLotes.length) { showToast('Sin lotes registrados'); return; }
+
+  consumoProductoId = productoId;
+  consumoDelta      = {};
+
+  const imgEl = p.ImagenURL
+    ? `<img src="${p.ImagenURL}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
+    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:18px"><i class="ti ti-box"></i></div>`;
+
+  document.getElementById('consumo-product').innerHTML = `${imgEl}<div>
+    <div style="font-size:14px;font-weight:500;color:var(--text-primary)">${p.Nombre}</div>
+    <div style="font-size:12px;color:var(--text-secondary)">Seleccioná cuánto consumiste de cada lote</div>
+  </div>`;
+
+  document.getElementById('consumo-lotes').innerHTML = pLotes.map(l => {
+    const est  = getEstado(l.FechaVenc);
+    const lbl  = l.FechaVenc ? `${fmtF(l.FechaVenc)} · ${diasLabel(l.FechaVenc)}` : 'Sin fecha';
+    return `<div class="consumo-lote-row" id="crow-${l.LoteID}">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+        <span class="lote-dot ${est}"></span>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Stock: ×<span id="cstock-${l.LoteID}">${l.Cantidad}</span></div>
+          <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <button class="qty-btn" onclick="stepConsumo('${l.LoteID}', -1, ${l.Cantidad})">−</button>
+        <span class="qty-val" id="cdelta-${l.LoteID}" style="font-family:var(--font-mono);font-weight:600;min-width:20px;text-align:center;color:var(--red)">0</span>
+        <button class="qty-btn" onclick="stepConsumo('${l.LoteID}', 1, ${l.Cantidad})">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('consumo-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function stepConsumo(loteId, d, maxCantidad) {
+  const current = consumoDelta[loteId] || 0;
+  const nuevo   = Math.max(0, Math.min(maxCantidad, current + d));
+  consumoDelta[loteId] = nuevo;
+  document.getElementById(`cdelta-${loteId}`).textContent = nuevo;
+  // Actualizar stock visual
+  const l = lotes.find(x => x.LoteID === loteId);
+  if (l) document.getElementById(`cstock-${loteId}`).textContent = l.Cantidad - nuevo;
+}
+
+function closeConsumoModal(e) {
+  if (e && e.target !== document.getElementById('consumo-modal')) return;
+  document.getElementById('consumo-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  consumoProductoId = null; consumoDelta = {};
+}
+
+async function confirmarConsumo() {
+  const entradas = Object.entries(consumoDelta).filter(([, v]) => v > 0);
+  if (!entradas.length) { showToast('No indicaste nada para consumir'); return; }
+
+  const btn = document.querySelector('#consumo-modal .btn.primary');
+  btn.disabled = true;
+  setLoading(true, 'Guardando consumo...');
+
+  let totalConsumido = 0;
+  try {
+    for (const [loteId, delta] of entradas) {
+      const l = lotes.find(x => x.LoteID === loteId);
+      if (!l) continue;
+      const nuevaCantidad = Math.max(0, l.Cantidad - delta);
+      totalConsumido += delta;
+      if (nuevaCantidad === 0) {
+        await apiPost({ accion: 'eliminar_lote', loteId });
+        lotes = lotes.filter(x => x.LoteID !== loteId);
+      } else {
+        await apiPost({ accion: 'editar_lote', loteId, cantidad: nuevaCantidad, fechaVenc: l.FechaVenc });
+        l.Cantidad = nuevaCantidad;
+      }
+    }
+    renderList();
+    showToast(`−${totalConsumido} consumidos`);
+    document.getElementById('consumo-modal').classList.remove('active');
+    document.body.style.overflow = '';
+    consumoProductoId = null; consumoDelta = {};
+  } catch (err) {
+    showToast('Error al guardar');
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
 //  SWIPE & CONSUMO RÁPIDO
 // ─────────────────────────────────────────────
-const SWIPE_THRESHOLD = 60;
-const SWIPE_OPEN_X   = 128; // ancho de los dos botones
+const SWIPE_THRESHOLD = 40;
+const SWIPE_OPEN_X   = 72;
 let   activeSwipe    = null;
 
 function initSwipe(wrap) {
@@ -1425,30 +1530,34 @@ document.addEventListener('touchstart', e => {
   if (activeSwipe && !activeSwipe.contains(e.target)) closeSwipe(activeSwipe);
 }, { passive: true });
 
-async function consumirRapido(id, delta) {
+async function consumirRapido(id) {
   const pLotes = lotesDeProducto(id);
-  if (!pLotes.length && delta < 0) { showToast('Sin lotes registrados'); return; }
+  if (!pLotes.length) { showToast('Sin lotes registrados'); return; }
+  const lote = pLotes[0]; // El más próximo a vencer
+  if (lote.Cantidad <= 0) { showToast('Sin stock en este lote'); return; }
 
-  // Restar del lote más próximo a vencer / sin fecha primero
-  if (delta < 0) {
-    const lote = pLotes[0];
-    if (!lote || lote.Cantidad <= 0) { showToast('Sin stock'); return; }
-    const nuevaCantidad = Math.max(0, lote.Cantidad + delta);
-    lote.Cantidad = nuevaCantidad;
-    const wrap = document.getElementById(`sw-${id}`);
-    if (wrap) closeSwipe(wrap);
-    const qtyEl = document.getElementById(`qty-${id}`);
-    if (qtyEl) qtyEl.textContent = `×${totalCantidad(id)}`;
-    renderList();
-    try {
+  const nuevaCantidad = lote.Cantidad - 1;
+  const wrap = document.getElementById(`sw-${id}`);
+  if (wrap) closeSwipe(wrap);
+
+  // Update optimista
+  lote.Cantidad = nuevaCantidad;
+  renderList();
+
+  try {
+    if (nuevaCantidad === 0) {
+      await apiPost({ accion: 'eliminar_lote', loteId: lote.LoteID });
+      lotes = lotes.filter(l => l.LoteID !== lote.LoteID);
+      renderList();
+      showToast(`−1 · lote agotado`);
+    } else {
       await apiPost({ accion: 'editar_lote', loteId: lote.LoteID, cantidad: nuevaCantidad, fechaVenc: lote.FechaVenc });
       showToast(`−1 · quedan ${totalCantidad(id)}`);
-    } catch (e) { lote.Cantidad -= delta; renderList(); showToast('Error al guardar'); }
-  } else {
-    // Sumar: abrir modal de lote para elegir a qué lote sumar
-    const wrap = document.getElementById(`sw-${id}`);
-    if (wrap) closeSwipe(wrap);
-    openLoteModal(id, pLotes.length === 1 ? pLotes[0].LoteID : null);
+    }
+  } catch (e) {
+    lote.Cantidad += 1;
+    renderList();
+    showToast('Error al guardar');
   }
 }
 
@@ -2219,19 +2328,17 @@ init();
       <button class="modal-close" onclick="closeLoteModal()"><i class="ti ti-x"></i></button>
     </div>
     <div id="lote-modal-product" style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)"></div>
-    <div class="form-grid">
-      <div>
-        <label>Cantidad</label>
-        <div class="qty-control" style="margin-top:5px">
-          <button class="qty-btn" onclick="changeQty(-1,'lote')">−</button>
-          <span class="qty-val" id="qty-lote">1</span>
-          <button class="qty-btn" onclick="changeQty(1,'lote')">+</button>
-        </div>
+    <div id="lote-qty-wrap" class="form-row">
+      <label>Cantidad</label>
+      <div class="qty-control" style="margin-top:5px">
+        <button class="qty-btn" onclick="changeQty(-1,'lote')">−</button>
+        <span class="qty-val" id="qty-lote">1</span>
+        <button class="qty-btn" onclick="changeQty(1,'lote')">+</button>
       </div>
-      <div>
-        <label>Fecha de vencimiento</label>
-        <input type="date" id="lote-fecha">
-      </div>
+    </div>
+    <div class="form-row">
+      <label>Fecha de vencimiento</label>
+      <input type="date" id="lote-fecha">
     </div>
     <button class="btn primary" onclick="saveLote()">
       <i class="ti ti-check"></i> Guardar lote
@@ -2243,20 +2350,20 @@ init();
   </div>
 </div>
 
-<!-- ══════════════ MODAL CANTIDAD ══════════════ -->
-<div class="qty-modal-overlay" id="qty-modal" onclick="closeQtyModal(event)">
-  <div class="qty-modal">
-    <div class="qty-modal-handle"></div>
-    <div class="qty-modal-product" id="qty-modal-product"></div>
-    <div class="qty-input-wrap">
-      <button class="qty-big-btn red" onclick="stepQtyModal(-1)">−</button>
-      <input type="number" id="qty-modal-input" inputmode="numeric" min="0" value="1">
-      <button class="qty-big-btn green" onclick="stepQtyModal(1)">+</button>
+<!-- ══════════════ MODAL CONSUMO ══════════════ -->
+<div class="modal-overlay" id="consumo-modal" onclick="closeConsumoModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Consumir</div>
+      <button class="modal-close" onclick="closeConsumoModal()"><i class="ti ti-x"></i></button>
     </div>
-    <button class="btn primary" onclick="saveQtyModal()">
-      <i class="ti ti-check"></i> Confirmar cantidad
+    <div id="consumo-product" style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)"></div>
+    <div id="consumo-lotes" style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem"></div>
+    <button class="btn primary" onclick="confirmarConsumo()">
+      <i class="ti ti-check"></i> Confirmar consumo
     </button>
-    <button class="btn ghost" onclick="closeQtyModal()" style="margin-top:8px">Cancelar</button>
+    <button class="btn ghost" onclick="closeConsumoModal()" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
 
@@ -2269,7 +2376,7 @@ init();
       <button class="modal-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
     </div>
 
-    <div id="modal-preview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem;display:none">
+    <div id="modal-preview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem">
       <div style="display:flex;align-items:center;gap:10px">
         <img id="modal-preview-img" src="" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">
         <div style="font-size:14px;font-weight:500;color:var(--text-primary)" id="modal-preview-name"></div>
