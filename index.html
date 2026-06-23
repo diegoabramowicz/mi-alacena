@@ -762,7 +762,14 @@ function copiarCodigo() {
 document.getElementById('auth-screen').classList.remove('active');
 setLoading(true, 'Cargando...');
 
+// Timeout de seguridad — si Supabase no responde en 5s, mostrar login
+const initTimeout = setTimeout(() => {
+  setLoading(false);
+  document.getElementById('auth-screen').classList.add('active');
+}, 5000);
+
 sb.auth.onAuthStateChange(async (event, session) => {
+  clearTimeout(initTimeout);
   if (session?.user) {
     currentUser = session.user;
     const { data: memData } = await sb.from('hogar_miembros')
