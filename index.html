@@ -678,10 +678,11 @@ async function doLogin() {
   const pass  = document.getElementById('login-pass').value;
   const err   = document.getElementById('login-error');
   err.classList.remove('show');
+  if (!email || !pass) { err.textContent = 'Completá el email y la contraseña para continuar.'; err.classList.add('show'); return; }
   setLoading(true, 'Ingresando...');
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   setLoading(false);
-  if (error) { err.textContent = error.message; err.classList.add('show'); }
+  if (error) { err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show'); }
 }
 async function doRegister() {
   const nombre = document.getElementById('reg-nombre').value.trim();
@@ -689,7 +690,9 @@ async function doRegister() {
   const pass   = document.getElementById('reg-pass').value;
   const err    = document.getElementById('reg-error');
   err.classList.remove('show');
-  if (!nombre) { err.textContent = 'Ingresá tu nombre'; err.classList.add('show'); return; }
+  if (!nombre) { err.textContent = 'Ingresá tu nombre.'; err.classList.add('show'); return; }
+  if (!email)  { err.textContent = 'Ingresá tu email.'; err.classList.add('show'); return; }
+  if (!pass || pass.length < 6) { err.textContent = 'La contraseña debe tener al menos 6 caracteres.'; err.classList.add('show'); return; }
   setLoading(true, 'Creando cuenta...');
   const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { nombre } } });
   setLoading(false);
