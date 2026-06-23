@@ -758,19 +758,43 @@ function copiarCodigo() {
 //  INIT — escuchar cambios de sesión
 // ─────────────────────────────────────────────
 
-// Mostrar loading inmediatamente mientras Supabase restaura la sesión
-document.getElementById('auth-screen').classList.remove('active');
-setLoading(true, 'Cargando...');
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+async function init() {
+  document.getElementById('auth-screen').classList.remove('active');
+  setLoading(true, 'Cargando...');
 
-// Timeout de seguridad — si Supabase no responde en 5s, mostrar login
-const initTimeout = setTimeout(() => {
-  setLoading(false);
-  document.getElementById('auth-screen').classList.add('active');
-}, 5000);
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      const { data: memData } = await sb.from('hogar_miembros')
+        .select('hogar_id, hogares(*)')
+        .eq('user_id', currentUser.id)
+        .limit(1)
+        .single();
+      if (memData?.hogares) {
+        currentHogar = memData.hogares;
+        setLoading(false);
+        await loadApp();
+      } else {
+        setLoading(false);
+        document.getElementById('hogar-screen').classList.add('active');
+      }
+    } else {
+      setLoading(false);
+      document.getElementById('auth-screen').classList.add('active');
+    }
+  } catch (e) {
+    setLoading(false);
+    document.getElementById('auth-screen').classList.add('active');
+  }
+}
 
+// Escuchar cambios de sesión (login / logout)
 sb.auth.onAuthStateChange(async (event, session) => {
-  clearTimeout(initTimeout);
-  if (session?.user) {
+  if (event === 'SIGNED_IN' && session?.user && !currentUser) {
     currentUser = session.user;
     const { data: memData } = await sb.from('hogar_miembros')
       .select('hogar_id, hogares(*)')
@@ -779,22 +803,21 @@ sb.auth.onAuthStateChange(async (event, session) => {
       .single();
     if (memData?.hogares) {
       currentHogar = memData.hogares;
-      setLoading(false);
       await loadApp();
     } else {
-      setLoading(false);
       document.getElementById('auth-screen').classList.remove('active');
       document.getElementById('hogar-screen').classList.add('active');
     }
-  } else {
+  } else if (event === 'SIGNED_OUT') {
     currentUser  = null;
     currentHogar = null;
-    setLoading(false);
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('hogar-screen').classList.remove('active');
     document.getElementById('auth-screen').classList.add('active');
   }
 });
+
+init();
 
 async function loadApp() {
   document.getElementById('auth-screen').classList.remove('active');
