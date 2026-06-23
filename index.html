@@ -232,7 +232,7 @@ input:focus,select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3
         <div><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
         <div><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
         <div class="auth-error" id="login-error"></div>
-        <button class="btn primary" onclick="doLogin()"><i class="ti ti-login"></i> Ingresar</button>
+        <button class="btn primary" id="btn-login" onclick="doLogin()"><i class="ti ti-login"></i> Ingresar</button>
         <div class="auth-divider">¿No tenés cuenta?</div>
         <button class="btn" onclick="showAuthRegister()">Registrarse</button>
       </div>
@@ -677,12 +677,17 @@ async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const err   = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-login');
   err.classList.remove('show');
   if (!email || !pass) { err.textContent = 'Completá el email y la contraseña para continuar.'; err.classList.add('show'); return; }
-  setLoading(true, 'Ingresando...');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" style="animation:spin .7s linear infinite"></i> Ingresando...';
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  setLoading(false);
-  if (error) { err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show'); }
+  if (error) {
+    err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = 'Ingresar';
+  }
 }
 async function doRegister() {
   const nombre = document.getElementById('reg-nombre').value.trim();
@@ -752,10 +757,14 @@ function copiarCodigo() {
 // ─────────────────────────────────────────────
 //  INIT — escuchar cambios de sesión
 // ─────────────────────────────────────────────
+
+// Mostrar loading inmediatamente mientras Supabase restaura la sesión
+document.getElementById('auth-screen').classList.remove('active');
+setLoading(true, 'Cargando...');
+
 sb.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     currentUser = session.user;
-    // Buscar hogar del usuario
     const { data: memData } = await sb.from('hogar_miembros')
       .select('hogar_id, hogares(*)')
       .eq('user_id', currentUser.id)
@@ -763,15 +772,17 @@ sb.auth.onAuthStateChange(async (event, session) => {
       .single();
     if (memData?.hogares) {
       currentHogar = memData.hogares;
+      setLoading(false);
       await loadApp();
     } else {
-      // Sin hogar → mostrar pantalla de hogar
+      setLoading(false);
       document.getElementById('auth-screen').classList.remove('active');
       document.getElementById('hogar-screen').classList.add('active');
     }
   } else {
     currentUser  = null;
     currentHogar = null;
+    setLoading(false);
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('hogar-screen').classList.remove('active');
     document.getElementById('auth-screen').classList.add('active');
