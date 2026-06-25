@@ -662,9 +662,16 @@ async function doLogin() {
   if (!email || !pass) { err.textContent = 'Completá el email y la contraseña para continuar.'; err.classList.add('show'); return; }
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader" style="animation:spin .7s linear infinite"></i> Ingresando...';
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) {
-    err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show');
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar';
+    }
+    // Si no hay error, onAuthStateChange maneja la navegación y restaura el botón
+  } catch (e) {
+    err.textContent = 'Error de conexión. Intentá de nuevo.'; err.classList.add('show');
     btn.disabled = false;
     btn.innerHTML = 'Ingresar';
   }
@@ -735,49 +742,57 @@ function copiarCodigo() {
 }
 
 // ─────────────────────────────────────────────
-//  INIT — escuchar cambios de sesión
-// ─────────────────────────────────────────────
-
-// ─────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────
+let appInitialized = false;
+
+async function handleSession(user) {
+  if (!user) {
+    currentUser = null; currentHogar = null;
+    setLoading(false);
+    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('hogar-screen').classList.remove('active');
+    document.getElementById('auth-screen').classList.add('active');
+    return;
+  }
+  currentUser = user;
+  try {
+    const { data: memData } = await sb.from('hogar_miembros')
+      .select('hogar_id, hogares(*)')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (memData?.hogares) {
+      currentHogar = memData.hogares;
+      setLoading(false);
+      await loadApp();
+    } else {
+      setLoading(false);
+      document.getElementById('auth-screen').classList.remove('active');
+      document.getElementById('hogar-screen').classList.add('active');
+    }
+  } catch (e) {
+    setLoading(false);
+    document.getElementById('auth-screen').classList.add('active');
+  }
+}
+
 async function init() {
   document.getElementById('auth-screen').classList.remove('active');
   setLoading(true, 'Cargando...');
 
-  // Timeout que cubre TODA la cadena — si algo se cuelga, muestra el login
   const killSwitch = setTimeout(() => {
-    setLoading(false);
-    document.getElementById('auth-screen').classList.add('active');
-  }, 8000);
-
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const user = session?.user ?? null;
-
-    if (user) {
-      currentUser = user;
-      const { data: memData, error: memError } = await sb.from('hogar_miembros')
-        .select('hogar_id, hogares(*)')
-        .eq('user_id', currentUser.id)
-        .limit(1)
-        .maybeSingle();
-
-      clearTimeout(killSwitch);
-
-      if (!memError && memData?.hogares) {
-        currentHogar = memData.hogares;
-        setLoading(false);
-        await loadApp();
-      } else {
-        setLoading(false);
-        document.getElementById('hogar-screen').classList.add('active');
-      }
-    } else {
-      clearTimeout(killSwitch);
+    if (!appInitialized) {
       setLoading(false);
       document.getElementById('auth-screen').classList.add('active');
     }
+  }, 6000);
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    clearTimeout(killSwitch);
+    appInitialized = true;
+    await handleSession(session?.user ?? null);
   } catch (e) {
     clearTimeout(killSwitch);
     setLoading(false);
@@ -785,25 +800,15 @@ async function init() {
   }
 }
 
-// Escuchar cambios de sesión (login / logout / token refresh)
 sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !currentUser) {
-    currentUser = session.user;
-    const { data: memData } = await sb.from('hogar_miembros')
-      .select('hogar_id, hogares(*)')
-      .eq('user_id', currentUser.id)
-      .limit(1)
-      .maybeSingle();
-    if (memData?.hogares) {
-      currentHogar = memData.hogares;
-      await loadApp();
-    } else {
-      document.getElementById('auth-screen').classList.remove('active');
-      document.getElementById('hogar-screen').classList.add('active');
-    }
+  if (event === 'SIGNED_IN') {
+    // Restaurar botón login si estaba cargando
+    const btn = document.getElementById('btn-login');
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
+    if (!appInitialized) return; // init() lo maneja
+    if (!currentUser) await handleSession(session?.user ?? null);
   } else if (event === 'SIGNED_OUT') {
-    currentUser  = null;
-    currentHogar = null;
+    currentUser = null; currentHogar = null; appInitialized = false;
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('hogar-screen').classList.remove('active');
     document.getElementById('auth-screen').classList.add('active');
