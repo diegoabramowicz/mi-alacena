@@ -32,7 +32,7 @@
 }
 body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);min-height:100vh;-webkit-font-smoothing:antialiased}
 .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-.header{background:var(--gradient);padding:1.5rem 1.25rem 3rem;position:sticky;top:0;z-index:10}
+.header{background:var(--gradient);padding:1.25rem 1.25rem 1.5rem;position:sticky;top:0;z-index:10}
 .header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem}
 .logo{display:flex;align-items:center;gap:8px}
 .logo-icon{width:28px;height:28px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
@@ -40,8 +40,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
 .logo-text span{opacity:.65}
 .header-right{display:flex;align-items:center;gap:8px}
 .hogar-badge{font-size:11px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.header-hogar-name{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.3px}
-.header-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;backdrop-filter:blur(10px)}
+.header-hogar-name{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.3px;margin-bottom:1.25rem}
+.header-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0}
 .sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
 .sync-dot.error{background:var(--red)}
@@ -49,8 +49,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.stats-float{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 1.25rem;margin-top:-1.75rem;margin-bottom:1.25rem;position:relative;z-index:5}
-.stat{background:var(--surface);border-radius:var(--radius-md);padding:.875rem .75rem;text-align:center;box-shadow:var(--shadow-float)}
+.stats-float{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#fff;border-radius:var(--radius-md);padding:.875rem .75rem;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12)}
 .stat-num{font-size:22px;font-weight:600;font-family:var(--font-mono);line-height:1;color:var(--blue)}
 .stat-lbl{font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
 .auth-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;align-items:center;justify-content:center;padding:1.5rem}
@@ -80,7 +80,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
 .codigo-display{background:var(--blue-light);border:1.5px solid var(--blue);border-radius:var(--radius-md);padding:1rem;text-align:center;margin-top:.5rem}
 .codigo-display .codigo{font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--blue);letter-spacing:4px}
 .codigo-display small{font-size:12px;color:var(--text-secondary);display:block;margin-top:4px}
-.content{flex:1;padding:0 1.25rem 6rem;background:var(--bg)}
+.content{flex:1;padding:1.25rem 1.25rem 6rem;background:var(--bg)}
 .tabs{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:10;box-shadow:0 -4px 20px rgba(24,95,165,.06)}
 .tab{flex:1;padding:.75rem .5rem .65rem;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-tertiary);font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:500;transition:color var(--transition)}
 .tab i{font-size:20px}
@@ -289,17 +289,17 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
     </div>
     <div class="hogar-badge">Tu hogar</div>
     <div class="header-hogar-name" id="hogar-badge">—</div>
+    <div class="stats-float">
+      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber)" id="stat-pronto">—</div><div class="stat-lbl">Por vencer</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--red)" id="stat-vencido">—</div><div class="stat-lbl">Vencidos</div></div>
+    </div>
   </header>
 
   <main class="content">
 
     <!-- ══ INVENTARIO ══ -->
     <div id="page-inventario" class="page active">
-      <div class="stats-float">
-        <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total</div></div>
-        <div class="stat"><div class="stat-num" style="color:var(--amber)" id="stat-pronto">—</div><div class="stat-lbl">Por vencer</div></div>
-        <div class="stat"><div class="stat-num" style="color:var(--red)" id="stat-vencido">—</div><div class="stat-lbl">Vencidos</div></div>
-      </div>
       <div class="filters">
         <select id="filter-est" onchange="renderList()">
           <option value="">Todos</option>
