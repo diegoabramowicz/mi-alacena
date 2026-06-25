@@ -736,16 +736,27 @@ async function init() {
   document.getElementById('auth-screen').classList.remove('active');
   setLoading(true, 'Cargando...');
 
+  // Timeout que cubre TODA la cadena — si algo se cuelga, muestra el login
+  const killSwitch = setTimeout(() => {
+    setLoading(false);
+    document.getElementById('auth-screen').classList.add('active');
+  }, 8000);
+
   try {
     const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      currentUser = session.user;
-      const { data: memData } = await sb.from('hogar_miembros')
+    const user = session?.user ?? null;
+
+    if (user) {
+      currentUser = user;
+      const { data: memData, error: memError } = await sb.from('hogar_miembros')
         .select('hogar_id, hogares(*)')
         .eq('user_id', currentUser.id)
         .limit(1)
-        .single();
-      if (memData?.hogares) {
+        .maybeSingle();
+
+      clearTimeout(killSwitch);
+
+      if (!memError && memData?.hogares) {
         currentHogar = memData.hogares;
         setLoading(false);
         await loadApp();
@@ -754,24 +765,26 @@ async function init() {
         document.getElementById('hogar-screen').classList.add('active');
       }
     } else {
+      clearTimeout(killSwitch);
       setLoading(false);
       document.getElementById('auth-screen').classList.add('active');
     }
   } catch (e) {
+    clearTimeout(killSwitch);
     setLoading(false);
     document.getElementById('auth-screen').classList.add('active');
   }
 }
 
-// Escuchar cambios de sesión (login / logout)
+// Escuchar cambios de sesión (login / logout / token refresh)
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session?.user && !currentUser) {
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !currentUser) {
     currentUser = session.user;
     const { data: memData } = await sb.from('hogar_miembros')
       .select('hogar_id, hogares(*)')
       .eq('user_id', currentUser.id)
       .limit(1)
-      .single();
+      .maybeSingle();
     if (memData?.hogares) {
       currentHogar = memData.hogares;
       await loadApp();
