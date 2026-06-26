@@ -693,27 +693,26 @@ async function doRegister() {
 }
 async function doLogout() {
   if (!confirm('Cerrar sesion?')) return;
-  setLoading(true, 'Cerrando sesion...');
-  await limpiarSesion();
-  setLoading(false);
+  limpiarSesionYRedirigir();
 }
 
 async function confirmarLogout() {
-  setLoading(true, 'Cerrando sesion...');
-  await limpiarSesion();
-  setLoading(false);
+  limpiarSesionYRedirigir();
 }
 
-// Limpia sesion — tanto voluntario como por token expirado
+function limpiarSesionYRedirigir() {
+  // Limpiar todo el localStorage
+  localStorage.clear();
+  sessionStorage.clear();
+  // Forzar recarga limpia — la forma mas robusta
+  window.location.reload();
+}
+
+// Para uso interno (token expirado)
 async function limpiarSesion() {
-  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
-  });
-  currentUser = null; currentHogar = null; appInitialized = false;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('hogar-screen').classList.remove('active');
-  document.getElementById('auth-screen').classList.add('active');
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.reload();
 }
 
 // ─────────────────────────────────────────────
