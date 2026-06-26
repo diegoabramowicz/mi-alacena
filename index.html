@@ -701,24 +701,22 @@ async function confirmarLogout() {
 }
 
 function limpiarSesionYRedirigir() {
-  localStorage.clear();
-  sessionStorage.clear();
-  // NO hacer reload — solo mostrar pantalla de login
-  currentUser = null; currentHogar = null; appInitialized = false;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('hogar-screen').classList.remove('active');
-  document.getElementById('auth-screen').classList.add('active');
-  setLoading(false);
+  mostrarLogin();
 }
 
 async function limpiarSesion() {
   try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
-  localStorage.clear();
-  sessionStorage.clear();
+  mostrarLogin();
+}
+
+function mostrarLogin() {
   currentUser = null; currentHogar = null; appInitialized = false;
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('hogar-screen').classList.remove('active');
   document.getElementById('auth-screen').classList.add('active');
+  // Restaurar botón login por si quedó deshabilitado
+  const btn = document.getElementById('btn-login');
+  if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
   setLoading(false);
 }
 
@@ -834,10 +832,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN') {
     const btn = document.getElementById('btn-login');
     if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
-    if (!appInitialized) return;
     if (!currentUser) await handleSession(session?.user ?? null);
   }
-  // No hacer nada en SIGNED_OUT — limpiarSesion lo maneja directamente
 });
 
 init();
