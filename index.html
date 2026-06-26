@@ -701,18 +701,25 @@ async function confirmarLogout() {
 }
 
 function limpiarSesionYRedirigir() {
-  // Limpiar todo el localStorage
   localStorage.clear();
   sessionStorage.clear();
-  // Forzar recarga limpia — la forma mas robusta
-  window.location.reload();
+  // NO hacer reload — solo mostrar pantalla de login
+  currentUser = null; currentHogar = null; appInitialized = false;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('hogar-screen').classList.remove('active');
+  document.getElementById('auth-screen').classList.add('active');
+  setLoading(false);
 }
 
-// Para uso interno (token expirado)
 async function limpiarSesion() {
+  try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
   localStorage.clear();
   sessionStorage.clear();
-  window.location.reload();
+  currentUser = null; currentHogar = null; appInitialized = false;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('hogar-screen').classList.remove('active');
+  document.getElementById('auth-screen').classList.add('active');
+  setLoading(false);
 }
 
 // ─────────────────────────────────────────────
@@ -829,9 +836,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
     if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
     if (!appInitialized) return;
     if (!currentUser) await handleSession(session?.user ?? null);
-  } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
-    await limpiarSesion();
   }
+  // No hacer nada en SIGNED_OUT — limpiarSesion lo maneja directamente
 });
 
 init();
