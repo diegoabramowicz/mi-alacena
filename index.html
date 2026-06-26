@@ -692,8 +692,42 @@ async function doRegister() {
   else { showToast('Cuenta creada — podés ingresar'); showAuthLogin(); }
 }
 async function doLogout() {
-  await sb.auth.signOut();
+  // Mostrar menú en lugar de desloguear directo
+  if (document.getElementById('avatar-menu').style.display === 'block') {
+    document.getElementById('avatar-menu').style.display = 'none';
+  } else {
+    document.getElementById('avatar-menu').style.display = 'block';
+  }
 }
+
+async function confirmarLogout() {
+  document.getElementById('avatar-menu').style.display = 'none';
+  setLoading(true, 'Cerrando sesión...');
+  await limpiarSesion();
+  setLoading(false);
+}
+
+// Limpia todo — tanto si el logout es voluntario como si el token expiró
+async function limpiarSesion() {
+  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+  // Limpiar tokens de Supabase del localStorage manualmente
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
+  });
+  currentUser = null; currentHogar = null; appInitialized = false;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('hogar-screen').classList.remove('active');
+  document.getElementById('auth-screen').classList.add('active');
+}
+
+// Cerrar menú al tocar fuera
+document.addEventListener('click', e => {
+  const menu   = document.getElementById('avatar-menu');
+  const avatar = document.getElementById('header-avatar');
+  if (menu && !menu.contains(e.target) && !avatar.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
 
 // ─────────────────────────────────────────────
 //  HOGAR
@@ -748,20 +782,23 @@ let appInitialized = false;
 
 async function handleSession(user) {
   if (!user) {
-    currentUser = null; currentHogar = null;
-    setLoading(false);
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('hogar-screen').classList.remove('active');
-    document.getElementById('auth-screen').classList.add('active');
+    await limpiarSesion();
     return;
   }
   currentUser = user;
   try {
-    const { data: memData } = await sb.from('hogar_miembros')
+    const { data: memData, error } = await sb.from('hogar_miembros')
       .select('hogar_id, hogares(*)')
       .eq('user_id', user.id)
       .limit(1)
       .maybeSingle();
+
+    // Token expirado o inválido
+    if (error?.status === 401 || error?.status === 403) {
+      await limpiarSesion();
+      return;
+    }
+
     if (memData?.hogares) {
       currentHogar = memData.hogares;
       setLoading(false);
@@ -802,16 +839,12 @@ async function init() {
 
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN') {
-    // Restaurar botón login si estaba cargando
     const btn = document.getElementById('btn-login');
     if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
-    if (!appInitialized) return; // init() lo maneja
+    if (!appInitialized) return;
     if (!currentUser) await handleSession(session?.user ?? null);
-  } else if (event === 'SIGNED_OUT') {
-    currentUser = null; currentHogar = null; appInitialized = false;
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('hogar-screen').classList.remove('active');
-    document.getElementById('auth-screen').classList.add('active');
+  } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+    await limpiarSesion();
   }
 });
 
@@ -853,6 +886,15 @@ async function fetchData() {
       sb.from('categorias').select('*').eq('hogar_id', hid).order('nombre'),
       sb.from('ubicaciones').select('*').eq('hogar_id', hid).order('nombre'),
     ]);
+
+    // Detectar token expirado en cualquiera de las llamadas
+    const authError = [pRes, lRes, cRes, uRes].find(r => r.error?.status === 401 || r.error?.status === 403);
+    if (authError) {
+      showToast('Sesión expirada — ingresá de nuevo');
+      await limpiarSesion();
+      return;
+    }
+
     productos   = pRes.data  || [];
     lotes       = lRes.data  || [];
     categorias  = cRes.data  || [];
