@@ -1,1538 +1,384 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>mi alacena</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --blue:#185FA5;--blue-dark:#0C447C;--blue-light:#EEF4FF;--blue-mid:#378ADD;
-  --indigo:#3C3489;--indigo-light:#EEEDFE;
-  --amber:#E67E22;--amber-light:#FEF3E2;
-  --green:#27AE60;--green-light:#E9F7EF;
-  --red:#E24B4A;--red-dark:#A32D2D;--red-light:#FCEBEB;
-  --bg:#FFFFFF;--surface:#FFFFFF;--bg-soft:#F5F8FF;
-  --border:#E8EDFF;--border-mid:#C8CEDC;
-  --text-primary:#1A1A28;--text-secondary:#6B6B80;--text-tertiary:#9B9BAA;
-  --font-body:"Inter",sans-serif;--font-mono:"JetBrains Mono",monospace;
-  --radius-sm:10px;--radius-md:14px;--radius-lg:20px;--radius-xl:26px;
-  --shadow-sm:0 4px 20px rgba(24,95,165,.07),0 1px 4px rgba(0,0,0,.04);
-  --shadow-md:0 8px 28px rgba(24,95,165,.12),0 2px 8px rgba(24,95,165,.06);
-  --shadow-float:0 12px 40px rgba(24,95,165,.15),0 4px 12px rgba(24,95,165,.08);
-  --transition:.15s ease;
-  --gradient:linear-gradient(135deg,#185FA5 0%,#3C3489 100%);
-}
-body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);min-height:100vh;-webkit-font-smoothing:antialiased}
-.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-.header{background:var(--gradient);padding:1.25rem 1.25rem 1.5rem;position:sticky;top:0;z-index:10}
-.header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.375rem}
-.logo{display:flex;align-items:center;gap:8px}
-.logo-icon{width:28px;height:28px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
-.logo-text{font-size:16px;font-weight:600;letter-spacing:-.3px;color:#fff}
-.logo-text span{opacity:.65}
-.header-right{display:flex;align-items:center;gap:8px}
-.hogar-badge{font-size:11px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.header-hogar-name{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.3px;margin-bottom:1.25rem}
-.header-avatar{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);flex-shrink:0}
-.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
-.sync-dot.error{background:var(--red)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.stats-float{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.stat{background:#fff;border-radius:var(--radius-md);padding:.875rem .75rem;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12)}
-.stat-num{font-size:22px;font-weight:600;font-family:var(--font-mono);line-height:1;color:var(--blue)}
-.stat-lbl{font-size:10px;color:var(--text-tertiary);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
-.auth-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;align-items:center;justify-content:center;padding:1.5rem}
-.auth-screen.active{display:flex}
-.auth-box{width:100%;max-width:380px}
-.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
-.auth-logo-icon{width:44px;height:44px;background:var(--gradient);border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(24,95,165,.3)}
-.auth-logo-text{font-size:22px;font-weight:600;letter-spacing:-.4px;color:var(--text-primary)}
-.auth-logo-text span{color:var(--blue)}
-.auth-title{font-size:20px;font-weight:600;margin-bottom:.375rem}
-.auth-sub{font-size:14px;color:var(--text-secondary);margin-bottom:1.75rem}
-.auth-form{display:flex;flex-direction:column;gap:12px}
-.auth-divider{text-align:center;font-size:12px;color:var(--text-tertiary);margin:.5rem 0}
-.auth-link{background:none;border:none;color:var(--blue);font-size:14px;cursor:pointer;font-family:var(--font-body);text-decoration:underline}
-.auth-error{font-size:13px;color:var(--red-dark);background:var(--red-light);border-radius:var(--radius-sm);padding:8px 12px;display:none;border:1px solid rgba(226,75,74,.2)}
-.auth-error.show{display:block}
-.hogar-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:99;align-items:center;justify-content:center;padding:1.5rem}
-.hogar-screen.active{display:flex}
-.hogar-box{width:100%;max-width:380px}
-.hogar-options{display:flex;flex-direction:column;gap:12px;margin-top:1.5rem}
-.hogar-option{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;cursor:pointer;transition:border-color .15s,box-shadow .15s;text-align:left;box-shadow:var(--shadow-sm)}
-.hogar-option:hover{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
-.hogar-option-icon{font-size:24px;color:var(--blue);margin-bottom:.5rem}
-.hogar-option-title{font-size:15px;font-weight:600;margin-bottom:.25rem}
-.hogar-option-desc{font-size:12px;color:var(--text-secondary)}
-.hogar-form{display:none;margin-top:1.25rem;display:flex;flex-direction:column;gap:10px}
-.codigo-display{background:var(--blue-light);border:1.5px solid var(--blue);border-radius:var(--radius-md);padding:1rem;text-align:center;margin-top:.5rem}
-.codigo-display .codigo{font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--blue);letter-spacing:4px}
-.codigo-display small{font-size:12px;color:var(--text-secondary);display:block;margin-top:4px}
-.content{flex:1;padding:1.25rem 1.25rem 6rem;background:var(--bg)}
-.tabs{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:10;box-shadow:0 -4px 20px rgba(24,95,165,.06)}
-.tab{flex:1;padding:.75rem .5rem .65rem;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-tertiary);font-family:var(--font-body);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:500;transition:color var(--transition)}
-.tab i{font-size:20px}
-.tab.active{color:var(--blue)}
-.tab-dot{width:4px;height:4px;border-radius:50%;background:var(--blue);margin-top:1px;display:none}
-.tab.active .tab-dot{display:block}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;padding-top:1.25rem}
-.section-title{font-size:12px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px}
-.filter-chip{font-size:11px;font-weight:500;background:var(--blue-light);color:var(--blue);border-radius:20px;padding:4px 12px;cursor:pointer;border:none;font-family:var(--font-body)}
-.filters{display:flex;gap:8px;margin-bottom:1rem}
-.filters select{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:var(--font-body);color:var(--text-primary);appearance:none;cursor:pointer;box-shadow:var(--shadow-sm)}
-.product-list{display:flex;flex-direction:column;gap:10px}
-.swipe-wrap{border-radius:var(--radius-lg)}
-.product-card{background:var(--surface);border-radius:var(--radius-lg);padding:.875rem 1rem;box-shadow:var(--shadow-sm);border:1px solid rgba(24,95,165,.06);animation:fadeIn .2s ease;transition:box-shadow .15s}
-.product-card:hover{box-shadow:var(--shadow-md)}
-.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.625rem}
-.card-body{display:flex;align-items:center;gap:10px}
-.card-img{width:46px;height:46px;object-fit:contain;border-radius:14px;background:var(--bg-soft);border:1px solid var(--border);flex-shrink:0}
-.card-img-placeholder{width:46px;height:46px;border-radius:14px;background:var(--bg-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:20px}
-.card-main{flex:1;min-width:0}
-.prod-name{font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.prod-meta{font-size:11px;color:var(--text-tertiary);display:flex;gap:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden}
-.card-qty{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--gradient);border-radius:12px;padding:6px 10px;min-width:44px;box-shadow:0 4px 12px rgba(24,95,165,.25)}
-.qty-num{font-size:15px;font-weight:700;font-family:var(--font-mono);color:#fff;line-height:1}
-.badge{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
-.badge.vencido{background:var(--red-light);color:var(--red-dark)}
-.badge.pronto{background:var(--amber-light);color:#8a4a00}
-.badge.ok{background:var(--green-light);color:#1a6b38}
-.prod-actions{display:flex;gap:2px;align-items:center}
-.icon-btn{background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:17px;padding:5px;border-radius:var(--radius-sm);transition:background var(--transition),color var(--transition)}
-.icon-btn:hover{background:var(--blue-light);color:var(--blue)}
-.btn-descontar{width:100%;margin-top:.75rem;padding:8px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg-soft);color:var(--blue);font-weight:600;font-size:12px;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,border-color .12s}
-.btn-descontar:hover{background:var(--blue-light);border-color:var(--blue)}
-.lotes-wrap{display:flex;flex-direction:column;gap:4px}
-.lote-row{display:flex;align-items:center;gap:6px;font-size:11px}
-.lote-row.muted{color:var(--text-tertiary)}
-.lote-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.lote-dot.vencido{background:var(--red)}.lote-dot.pronto{background:var(--amber)}.lote-dot.ok{background:var(--green)}
-.lote-qty{font-family:var(--font-mono);font-weight:600;color:var(--text-primary);flex-shrink:0}
-.lote-fecha{color:var(--text-secondary);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lote-edit-btn{background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:13px;padding:2px 4px;border-radius:4px;flex-shrink:0;line-height:1;transition:background .1s,color .1s}
-.lote-edit-btn:hover{background:var(--blue-light);color:var(--blue)}
-.empty{text-align:center;color:var(--text-secondary);font-size:14px;padding:3rem 1rem}
-.empty i{font-size:40px;display:block;margin-bottom:.75rem;color:var(--text-tertiary)}
-.loading-overlay{display:none;position:fixed;inset:0;background:rgba(240,242,248,.9);z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:12px}
-.loading-overlay.active{display:flex}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
-.loading-text{font-size:13px;color:var(--text-secondary)}
-.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--indigo);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;z-index:100;pointer-events:none}
-.toast.show{opacity:1}
-.form-section{display:none}.form-section.active{display:block}
-.page{display:none}.page.active{display:block}
-.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.125rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)}
-.form-card-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:1rem}
-.form-row{margin-bottom:.875rem}.form-row:last-child{margin-bottom:0}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.875rem}
-label{font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-input,select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:14px;font-family:var(--font-body);color:var(--text-primary);transition:border-color var(--transition),box-shadow var(--transition);appearance:none}
-input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
-.qty-control{display:flex;align-items:center;gap:10px;margin-top:5px}
-.qty-btn{width:30px;height:30px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--text-primary);transition:background var(--transition)}
-.qty-btn:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
-.qty-val{font-size:16px;font-weight:600;font-family:var(--font-mono);min-width:28px;text-align:center;color:var(--blue)}
-.btn{width:100%;padding:11px;font-size:14px;font-weight:500;border-radius:var(--radius-md);border:1.5px solid var(--border);background:var(--surface);color:var(--text-primary);cursor:pointer;font-family:var(--font-body);display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--transition),border-color var(--transition)}
-.btn:hover{background:var(--bg)}
-.btn.primary{background:var(--gradient);color:#fff;border-color:transparent}
-.btn.primary:hover{opacity:.92}
-.btn.ghost{background:none;border-color:transparent;color:var(--text-secondary)}
-.btn+.btn{margin-top:8px}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.scan-idle-box{background:var(--surface);border:2px dashed var(--border-mid);border-radius:var(--radius-lg);padding:2rem 1.5rem;text-align:center;margin-bottom:1rem}
-.scan-idle-box i{font-size:40px;color:var(--blue);display:block;margin-bottom:.75rem}
-#video-wrap{display:none;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1rem}
-.status-card{border-radius:var(--radius-lg);padding:1rem 1.125rem;margin-bottom:1rem;border:1px solid}
-.status-card.found{background:var(--green-light);border-color:#a8dbbe}
-.status-card.new-product{background:var(--blue-light);border-color:#bad0f7}
-.status-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.4px}
-.status-tag.found{background:var(--green-light);color:#1a6b38;border:1px solid #a8dbbe}
-.status-tag.new-product{background:var(--blue-light);color:var(--blue-dark);border:1px solid #bad0f7}
-.status-name{font-size:16px;font-weight:600;color:var(--text-primary)}
-.status-meta{font-size:12px;color:var(--text-secondary);margin-top:3px}
-.divider{border:none;border-top:1px solid var(--border);margin:1rem 0}
-.autocomplete-wrap{position:relative}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1.5px solid var(--border);border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);box-shadow:var(--shadow-md);z-index:50;max-height:200px;overflow-y:auto;display:none}
-.autocomplete-list.open{display:block}
-.autocomplete-item{padding:9px 12px;font-size:14px;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:10px;border-bottom:1px solid var(--border);transition:background var(--transition)}
-.autocomplete-item:last-child{border-bottom:none}
-.autocomplete-item:hover,.autocomplete-item.selected{background:var(--blue-light)}
-.autocomplete-item strong{color:var(--text-primary);font-weight:500}
-.autocomplete-item small{color:var(--text-tertiary);font-size:11px}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,20,40,.5);z-index:200;align-items:flex-end;justify-content:center}
-.modal-overlay.active{display:flex}
-.modal{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:0 1.25rem 2rem;animation:slideUp .22s ease}
-.modal-handle{width:36px;height:4px;background:var(--border-mid);border-radius:2px;margin:12px auto 1.25rem}
-.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.modal-title{font-size:16px;font-weight:600;color:var(--text-primary)}
-.modal-close{background:var(--bg);border:1.5px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);font-size:16px}
-.consumo-lote-row{display:flex;align-items:center;gap:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem}
-.settings-user{background:var(--gradient);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md)}
-.settings-avatar{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:600;flex-shrink:0}
-.settings-hogar-code{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--blue);letter-spacing:3px}
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mi alacena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Cargando...</div>
+  </div>
+  <div class="toast" id="toast"></div>
 
-<!-- ── Loading ── -->
-<div class="loading-overlay" id="loading">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Cargando...</div>
-</div>
-<div class="toast" id="toast"></div>
-
-<!-- ══════════ AUTH SCREEN ══════════ -->
-<div class="auth-screen active" id="auth-screen">
-  <div class="auth-box">
-    <div class="auth-logo">
-      <div class="auth-logo-icon"><i class="ti ti-box"></i></div>
-      <div class="auth-logo-text">mi<span>alacena</span></div>
-    </div>
-
-    <!-- Login -->
-    <div id="auth-login">
-      <div class="auth-title">Bienvenido</div>
-      <div class="auth-sub">Ingresá con tu cuenta para continuar</div>
-      <div class="auth-form">
-        <div><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
-        <div><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
-        <div class="auth-error" id="login-error"></div>
-        <button class="btn primary" id="btn-login" onclick="doLogin()"><i class="ti ti-login"></i> Ingresar</button>
-        <div class="auth-divider">¿No tenés cuenta?</div>
-        <button class="btn" onclick="showAuthRegister()">Registrarse</button>
+  <div class="auth-screen active" id="auth-screen">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <div class="auth-logo-icon"><i class="ti ti-box"></i></div>
+        <div class="auth-logo-text">mi<span>alacena</span></div>
       </div>
-    </div>
 
-    <!-- Registro -->
-    <div id="auth-register" style="display:none">
-      <div class="auth-title">Crear cuenta</div>
-      <div class="auth-sub">Registrate para empezar</div>
-      <div class="auth-form">
-        <div><label>Nombre</label><input type="text" id="reg-nombre" placeholder="Tu nombre"></div>
-        <div><label>Email</label><input type="email" id="reg-email" placeholder="tu@email.com"></div>
-        <div><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"></div>
-        <div class="auth-error" id="reg-error"></div>
-        <button class="btn primary" onclick="doRegister()"><i class="ti ti-user-plus"></i> Registrarse</button>
-        <div class="auth-divider">¿Ya tenés cuenta?</div>
-        <button class="btn" onclick="showAuthLogin()">Ingresar</button>
+      <div id="auth-login">
+        <div class="auth-title">Bienvenido</div>
+        <div class="auth-sub">Ingresá con tu cuenta para continuar</div>
+        <div class="auth-form">
+          <div><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
+          <div><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+          <div class="auth-error" id="login-error"></div>
+          <button class="btn primary" id="btn-login" onclick="doLogin()"><i class="ti ti-login"></i> Ingresar</button>
+          <div class="auth-divider">¿No tenés cuenta?</div>
+          <button class="btn" onclick="showAuthRegister()">Registrarse</button>
+        </div>
+      </div>
+
+      <div id="auth-register" style="display:none">
+        <div class="auth-title">Crear cuenta</div>
+        <div class="auth-sub">Guardá tu alacena y compartila con tu hogar</div>
+        <div class="auth-form">
+          <div><label>Nombre</label><input type="text" id="reg-nombre" placeholder="Tu nombre"></div>
+          <div><label>Email</label><input type="email" id="reg-email" placeholder="tu@email.com"></div>
+          <div><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"></div>
+          <div class="auth-error" id="reg-error"></div>
+          <button class="btn primary" onclick="doRegister()"><i class="ti ti-user-plus"></i> Registrarse</button>
+          <div class="auth-divider">¿Ya tenés cuenta?</div>
+          <button class="btn" onclick="showAuthLogin()">Ingresar</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ══════════ HOGAR SCREEN ══════════ -->
-<div class="hogar-screen" id="hogar-screen">
-  <div class="hogar-box">
-    <div class="auth-logo">
-      <div class="auth-logo-icon"><i class="ti ti-box"></i></div>
-      <div class="auth-logo-text">mi<span>alacena</span></div>
-    </div>
-    <div class="auth-title">Configurá tu hogar</div>
-    <div class="auth-sub">Creá un hogar nuevo o unite al de alguien</div>
-
-    <div class="hogar-options">
-      <div class="hogar-option" onclick="showCrearHogar()">
-        <div class="hogar-option-icon"><i class="ti ti-home-plus"></i></div>
-        <div class="hogar-option-title">Crear hogar nuevo</div>
-        <div class="hogar-option-desc">Empezá desde cero con tu propio inventario</div>
+  <div class="hogar-screen" id="hogar-screen">
+    <div class="hogar-box">
+      <div class="auth-logo">
+        <div class="auth-logo-icon"><i class="ti ti-home-heart"></i></div>
+        <div class="auth-logo-text">mi<span>hogar</span></div>
       </div>
-      <div class="hogar-option" onclick="showUnirseHogar()">
-        <div class="hogar-option-icon"><i class="ti ti-door-enter"></i></div>
-        <div class="hogar-option-title">Unirme a un hogar</div>
-        <div class="hogar-option-desc">Ingresá el código que te compartió alguien</div>
+      <div class="auth-title">Elegí cómo continuar</div>
+      <div class="auth-sub">Podés crear un hogar nuevo o sumarte al de otra persona.</div>
+
+      <div class="hogar-options">
+        <div class="hogar-option" onclick="showCrearHogar()">
+          <div class="hogar-option-icon"><i class="ti ti-home-plus"></i></div>
+          <div class="hogar-option-title">Crear un hogar</div>
+          <div class="hogar-option-desc">Obtenés un código para invitar a otras personas.</div>
+        </div>
+        <div class="hogar-option" onclick="showUnirseHogar()">
+          <div class="hogar-option-icon"><i class="ti ti-door-enter"></i></div>
+          <div class="hogar-option-title">Unirme a un hogar</div>
+          <div class="hogar-option-desc">Ingresá un código compartido por otra persona.</div>
+        </div>
       </div>
-    </div>
 
-    <!-- Crear hogar -->
-    <div id="crear-hogar-form" style="display:none;margin-top:1.25rem">
-      <div class="form-row"><label>Nombre del hogar</label><input type="text" id="hogar-nombre" placeholder="Casa, Depto, etc."></div>
-      <div class="auth-error" id="crear-error"></div>
-      <button class="btn primary" onclick="doCrearHogar()"><i class="ti ti-check"></i> Crear hogar</button>
-      <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
-    </div>
+      <div class="hogar-form" id="crear-hogar-form" style="display:none">
+        <div><label>Nombre del hogar</label><input type="text" id="hogar-nombre" placeholder="Ej. Casa de Diego"></div>
+        <div class="auth-error" id="crear-error"></div>
+        <button class="btn primary" onclick="doCrearHogar()"><i class="ti ti-check"></i> Crear hogar</button>
+        <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
+      </div>
 
-    <!-- Unirse a hogar -->
-    <div id="unirse-hogar-form" style="display:none;margin-top:1.25rem">
-      <div class="form-row"><label>Código del hogar</label><input type="text" id="hogar-codigo" placeholder="ej: a3f8b2c1" style="font-family:var(--font-mono);letter-spacing:2px;text-transform:lowercase"></div>
-      <div class="auth-error" id="unirse-error"></div>
-      <button class="btn primary" onclick="doUnirseHogar()"><i class="ti ti-door-enter"></i> Unirme</button>
-      <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
+      <div class="hogar-form" id="unirse-hogar-form" style="display:none">
+        <div><label>Código del hogar</label><input type="text" id="hogar-codigo" placeholder="abcd12"></div>
+        <div class="auth-error" id="unirse-error"></div>
+        <button class="btn primary" onclick="doUnirseHogar()"><i class="ti ti-door-enter"></i> Unirme</button>
+        <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ══════════ APP ══════════ -->
-<div class="app" id="main-app" style="display:none">
-  <header class="header">
-    <div class="header-row">
-      <div class="logo">
-        <div class="logo-icon"><i class="ti ti-box"></i></div>
-        <div class="logo-text">mi<span>alacena</span></div>
-      </div>
-      <div class="header-right">
-        <div class="sync-dot" id="sync-dot"></div>
-        <div class="header-avatar" id="header-avatar" onclick="doLogout()" title="Cerrar sesión">?</div>
-      </div>
-    </div>
-    <div class="hogar-badge">Tu hogar</div>
-    <div class="header-hogar-name" id="hogar-badge">—</div>
-    <div class="stats-float">
-      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total</div></div>
-      <div class="stat"><div class="stat-num" style="color:var(--amber)" id="stat-pronto">—</div><div class="stat-lbl">Por vencer</div></div>
-      <div class="stat"><div class="stat-num" style="color:var(--red)" id="stat-vencido">—</div><div class="stat-lbl">Vencidos</div></div>
-    </div>
-  </header>
-
-  <main class="content">
-
-    <!-- ══ INVENTARIO ══ -->
-    <div id="page-inventario" class="page active">
-      <div class="filters">
-        <select id="filter-est" onchange="renderList()">
-          <option value="">Todos</option>
-          <option value="vencido">Vencidos</option>
-          <option value="pronto">Por vencer</option>
-          <option value="ok">En buen estado</option>
-        </select>
-        <select id="filter-cat" onchange="renderList()">
-          <option value="">Todas las categorías</option>
-        </select>
-      </div>
-      <div class="product-list" id="product-list"></div>
-    </div>
-
-    <!-- ══ SCANNER ══ -->
-    <div id="page-scanner" class="page">
-      <div id="scan-idle" class="form-section active">
-        <div class="scan-idle-box">
-          <i class="ti ti-barcode"></i>
-          <p style="font-size:14px;font-weight:500;color:var(--text-primary)">Escanear código de barras</p>
-          <small style="font-size:12px;color:var(--text-secondary)">Apuntá la cámara al código del producto</small>
+  <div class="app" id="main-app" style="display:none">
+    <header class="header">
+      <div class="header-row">
+        <div class="logo">
+          <div class="logo-icon"><i class="ti ti-box"></i></div>
+          <div class="logo-text">mi<span>alacena</span></div>
         </div>
-        <button class="btn primary" onclick="startScan()"><i class="ti ti-camera"></i> Activar cámara</button>
-        <button class="btn" style="margin-top:8px" onclick="showManualInput()"><i class="ti ti-keyboard"></i> Ingresar código manualmente</button>
-      </div>
-      <div id="scan-scanning" class="form-section">
-        <div id="video-wrap"><div id="scan-video" style="width:100%"></div></div>
-        <button class="btn" onclick="stopScan()"><i class="ti ti-player-stop"></i> Detener cámara</button>
-      </div>
-      <div id="scan-manual" class="form-section">
-        <div class="form-card">
-          <div class="form-row"><label>Código de barras</label><input type="text" id="manual-bc" inputmode="numeric" placeholder="Ej: 7790895067570"></div>
-          <button class="btn primary" onclick="lookupManual()"><i class="ti ti-search"></i> Buscar producto</button>
-          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+        <div class="header-right">
+          <div class="sync-dot" id="sync-dot"></div>
+          <div class="header-avatar" id="header-avatar" onclick="doLogout()" title="Cerrar sesión">?</div>
         </div>
       </div>
-      <div id="scan-found" class="form-section">
-        <div class="status-card found">
-          <div class="status-tag found"><i class="ti ti-check" style="font-size:11px"></i> Producto reconocido</div>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
-            <img id="found-img" src="" alt="" style="width:60px;height:60px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);display:none;flex-shrink:0">
-            <div><div class="status-name" id="found-name">—</div><div class="status-meta" id="found-meta">—</div></div>
+      <div class="hogar-badge">Hogar</div>
+      <div class="header-hogar-name" id="hogar-badge">—</div>
+      <div class="stats-float">
+        <div class="stat">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-lbl">Unidades</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="stat-pronto">0</div>
+          <div class="stat-lbl">Por vencer</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="stat-vencido">0</div>
+          <div class="stat-lbl">Vencidos</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div id="page-inventario" class="page active">
+        <div class="section-header">
+          <div class="section-title">Inventario</div>
+        </div>
+        <div class="filters">
+          <select id="filter-est" onchange="renderList()">
+            <option value="">Todos los estados</option>
+            <option value="vencido">Vencidos</option>
+            <option value="pronto">Por vencer</option>
+            <option value="ok">OK</option>
+          </select>
+          <select id="filter-cat" onchange="renderList()">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div class="product-list" id="product-list"></div>
+      </div>
+
+      <div id="page-scanner" class="page">
+        <div id="scan-idle" class="form-section active">
+          <div class="form-card">
+            <div class="scan-idle-box">
+              <i class="ti ti-barcode"></i>
+              <div class="auth-title">Escanear código de barras</div>
+              <div class="auth-sub">Usá la cámara o cargalo manualmente.</div>
+            </div>
+            <button class="btn primary" onclick="startScan()"><i class="ti ti-camera"></i> Activar cámara</button>
+            <button class="btn" style="margin-top:8px" onclick="showManualInput()"><i class="ti ti-keyboard"></i> Ingresar código manualmente</button>
           </div>
         </div>
-        <div class="form-card">
-          <div class="form-grid">
-            <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'scan')">−</button><span class="qty-val" id="qty-scan">1</span><button class="qty-btn" onclick="changeQty(1,'scan')">+</button></div></div>
-            <div><label>Fecha de vencimiento</label><input type="date" id="found-fecha"></div>
-          </div>
-          <button class="btn primary" onclick="saveFound()"><i class="ti ti-check"></i> Guardar</button>
-          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
-        </div>
-      </div>
-      <div id="scan-new" class="form-section">
-        <div class="status-card new-product">
-          <div class="status-tag new-product"><i class="ti ti-sparkles" style="font-size:11px"></i> Producto nuevo</div>
-          <div id="off-preview" style="display:none;align-items:center;gap:12px;margin-top:6px">
-            <img id="new-img" src="" alt="" style="width:60px;height:60px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">
-            <div><div style="font-size:13px;color:var(--text-secondary)">Open Food Facts</div><div id="off-product-name" style="font-size:14px;font-weight:500;color:var(--text-primary);margin-top:2px"></div></div>
-          </div>
-          <div class="status-meta" style="margin-top:6px">No está en tu lista — completá los datos una sola vez.</div>
-        </div>
-        <div class="form-card">
-          <div class="form-row"><label>Nombre del producto</label><input type="text" id="new-nombre" placeholder="Ej: Arroz largo fino 1kg"></div>
-          <div class="form-grid">
-            <div><label>Categoría</label><select id="new-cat"></select></div>
-            <div><label>Ubicación</label><select id="new-ubic"></select></div>
-          </div>
-          <hr class="divider">
-          <div class="form-grid">
-            <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'scan')">−</button><span class="qty-val" id="qty-scan">1</span><button class="qty-btn" onclick="changeQty(1,'scan')">+</button></div></div>
-            <div><label>Fecha de vencimiento</label><input type="date" id="new-fecha"></div>
-          </div>
-          <button class="btn primary" onclick="saveNew()"><i class="ti ti-check"></i> Guardar producto</button>
-          <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
-        </div>
-      </div>
-    </div>
 
-    <!-- ══ MANUAL ══ -->
-    <div id="page-manual" class="page">
-      <div id="manual-search" class="form-section active">
-        <div class="form-card">
-          <div class="form-card-title">Buscar producto</div>
-          <div class="form-row"><label>Nombre o código de barras</label>
+        <div id="scan-scanning" class="form-section">
+          <div class="form-card">
+            <div class="form-card-title">Escaneando</div>
+            <div id="video-wrap">
+              <div id="scan-video"></div>
+            </div>
+            <button class="btn" onclick="stopScan()"><i class="ti ti-player-stop"></i> Detener cámara</button>
+          </div>
+        </div>
+
+        <div id="scan-manual" class="form-section">
+          <div class="form-card">
+            <div class="form-card-title">Buscar por código</div>
+            <div class="form-row"><label>Código de barras</label><input type="text" id="manual-bc" placeholder="779..." inputmode="numeric"></div>
+            <button class="btn primary" onclick="lookupManual()"><i class="ti ti-search"></i> Buscar producto</button>
+            <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+          </div>
+        </div>
+
+        <div id="scan-found" class="form-section">
+          <div class="status-card found">
+            <div class="status-tag found"><i class="ti ti-check"></i> Producto existente</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <img id="found-img" alt="" class="card-img" style="display:none">
+              <div>
+                <div class="status-name" id="found-name">—</div>
+                <div class="status-meta" id="found-meta"></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-card">
+            <div class="form-grid">
+              <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'scan')">−</button><span class="qty-val" id="qty-scan">1</span><button class="qty-btn" onclick="changeQty(1,'scan')">+</button></div></div>
+              <div><label>Vencimiento</label><input type="date" id="found-fecha"></div>
+            </div>
+            <button class="btn primary" onclick="saveFound()"><i class="ti ti-check"></i> Guardar</button>
+            <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+          </div>
+        </div>
+
+        <div id="scan-new" class="form-section">
+          <div class="status-card new-product">
+            <div class="status-tag new-product"><i class="ti ti-sparkles"></i> Producto nuevo</div>
+            <div class="status-name">No estaba en tu inventario</div>
+            <div class="status-meta">Completá los datos para guardarlo.</div>
+          </div>
+
+          <div class="form-card" id="off-preview" style="display:none">
+            <div style="display:flex;align-items:center;gap:12px">
+              <img id="new-img" alt="" class="card-img">
+              <div>
+                <div class="status-name" id="off-product-name">—</div>
+                <div class="status-meta">Datos sugeridos por Open Food Facts</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-row"><label>Nombre</label><input type="text" id="new-nombre" placeholder="Ej. Fideos"></div>
+            <div class="form-grid">
+              <div><label>Categoría</label><select id="new-cat"></select></div>
+              <div><label>Ubicación</label><select id="new-ubic"></select></div>
+            </div>
+            <div class="form-grid">
+              <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'scan')">−</button><span class="qty-val" id="qty-scan">1</span><button class="qty-btn" onclick="changeQty(1,'scan')">+</button></div></div>
+              <div><label>Vencimiento</label><input type="date" id="new-fecha"></div>
+            </div>
+            <button class="btn primary" onclick="saveNew()"><i class="ti ti-check"></i> Guardar producto</button>
+            <button class="btn ghost" onclick="setScanState('idle')">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-manual" class="page">
+        <div id="manual-search" class="form-section active">
+          <div class="form-card">
+            <div class="form-card-title">Cargar manualmente</div>
             <div class="autocomplete-wrap">
-              <input type="text" id="m-search" placeholder="Ej: Coca Cola, 7790895067570…" autocomplete="off" oninput="acInput(this.value)" onkeydown="acKeydown(event)" onblur="acBlur()">
+              <label>Buscar un producto existente</label>
+              <input type="text" id="m-search" placeholder="Nombre o código de barras" oninput="acInput(this.value)" onkeydown="acKeydown(event)" onblur="acBlur()">
               <div class="autocomplete-list" id="ac-list"></div>
             </div>
-          </div>
-          <div id="off-search-wrap" style="display:none;margin-top:4px">
-            <button class="btn" onclick="searchOFF()" id="btn-off-search"><i class="ti ti-world"></i> Buscar en Open Food Facts</button>
-          </div>
-        </div>
-        <button class="btn ghost" onclick="showManualBlank()"><i class="ti ti-pencil"></i> Cargar sin buscar</button>
-      </div>
-      <div id="manual-form" class="form-section">
-        <div id="m-preview" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.125rem;margin-bottom:1rem;box-shadow:var(--shadow-sm)">
-          <div style="display:flex;align-items:center;gap:12px">
-            <img id="m-preview-img" src="" alt="" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:var(--bg);border:1px solid var(--border);flex-shrink:0">
-            <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;font-weight:500;margin-bottom:2px" id="m-preview-source">Open Food Facts</div><div style="font-size:15px;font-weight:500;color:var(--text-primary)" id="m-preview-name"></div></div>
-          </div>
-        </div>
-        <div class="form-card">
-          <div class="form-card-title" id="manual-title">Nuevo producto</div>
-          <div class="form-row"><label>Nombre del producto</label><input type="text" id="m-nombre" placeholder="Ej: Fideos moño 400g"></div>
-          <div class="form-grid">
-            <div><label>Categoría</label><select id="m-cat"></select></div>
-            <div><label>Ubicación</label><select id="m-ubic"></select></div>
-          </div>
-          <div class="form-grid">
-            <div><label>Fecha de vencimiento</label><input type="date" id="m-fecha"></div>
-            <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'manual')">−</button><span class="qty-val" id="qty-manual">1</span><button class="qty-btn" onclick="changeQty(1,'manual')">+</button></div></div>
-          </div>
-          <div class="form-row"><label>Código de barras (opcional)</label><input type="text" id="m-barcode" inputmode="numeric" placeholder="Para reconocimiento futuro"></div>
-          <button class="btn primary" id="btn-save-manual" onclick="saveManual()"><i class="ti ti-check"></i> Guardar producto</button>
-          <button class="btn ghost" onclick="resetManualForm()">Cancelar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ AJUSTES ══ -->
-    <div id="page-ajustes" class="page">
-      <div class="settings-user" id="settings-user-card">
-        <div class="settings-avatar" id="settings-avatar">?</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:500" id="settings-email">—</div>
-          <div style="font-size:12px;color:var(--text-secondary)" id="settings-hogar-name">—</div>
-        </div>
-        <button class="icon-btn" onclick="doLogout()" title="Cerrar sesión"><i class="ti ti-logout"></i></button>
-      </div>
-
-      <!-- Código del hogar -->
-      <div class="form-card" style="margin-bottom:1rem">
-        <div class="form-card-title">Código del hogar</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:.75rem">Compartí este código para que otros puedan unirse a tu hogar</p>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="settings-hogar-code" id="settings-codigo">——————</div>
-          <button class="btn" style="width:auto;padding:8px 14px;flex-shrink:0" onclick="copiarCodigo()"><i class="ti ti-copy"></i> Copiar</button>
-        </div>
-      </div>
-
-      <!-- Categorías -->
-      <div class="form-card" style="margin-bottom:1rem">
-        <div class="form-card-title">Categorías</div>
-        <div id="settings-cats" style="margin-bottom:1rem"></div>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="new-cat-input" placeholder="Nueva categoría..." style="flex:1">
-          <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarCategoria()"><i class="ti ti-plus"></i></button>
-        </div>
-      </div>
-
-      <!-- Ubicaciones -->
-      <div class="form-card">
-        <div class="form-card-title">Ubicaciones</div>
-        <div id="settings-ubics" style="margin-bottom:1rem"></div>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="new-ubic-input" placeholder="Nueva ubicación..." style="flex:1">
-          <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarUbicacion()"><i class="ti ti-plus"></i></button>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <nav class="tabs">
-    <button class="tab active" id="tab-inventario" onclick="showPage('inventario')"><i class="ti ti-package"></i>Inventario<div class="tab-dot"></div></button>
-    <button class="tab" id="tab-scanner" onclick="showPage('scanner')"><i class="ti ti-barcode"></i>Escanear<div class="tab-dot"></div></button>
-    <button class="tab" id="tab-manual" onclick="showPage('manual')"><i class="ti ti-plus"></i>Manual<div class="tab-dot"></div></button>
-    <button class="tab" id="tab-ajustes" onclick="showPage('ajustes')"><i class="ti ti-settings"></i>Ajustes<div class="tab-dot"></div></button>
-  </nav>
-</div>
-
-<!-- ══ MODAL LOTE ══ -->
-<div class="modal-overlay" id="lote-modal" onclick="closeLoteModal(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title" id="lote-modal-title">Agregar lote</div>
-      <button class="modal-close" onclick="closeLoteModal()"><i class="ti ti-x"></i></button>
-    </div>
-    <div id="lote-modal-product" style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)"></div>
-    <div id="lote-qty-wrap" class="form-row">
-      <label>Cantidad</label>
-      <div class="qty-control" style="margin-top:5px">
-        <button class="qty-btn" onclick="changeQty(-1,'lote')">−</button>
-        <span class="qty-val" id="qty-lote">1</span>
-        <button class="qty-btn" onclick="changeQty(1,'lote')">+</button>
-      </div>
-    </div>
-    <div class="form-row"><label>Fecha de vencimiento</label><input type="date" id="lote-fecha"></div>
-    <button class="btn primary" onclick="saveLote()"><i class="ti ti-check"></i> Guardar lote</button>
-    <button class="btn ghost" id="lote-delete-btn" onclick="deleteLote()" style="margin-top:8px;color:var(--red);display:none"><i class="ti ti-trash"></i> Eliminar este lote</button>
-    <button class="btn ghost" onclick="closeLoteModal()" style="margin-top:8px">Cancelar</button>
-  </div>
-</div>
-
-<!-- ══ MODAL CONSUMO ══ -->
-<div class="modal-overlay" id="consumo-modal" onclick="closeConsumoModal(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">Descontar stock</div>
-      <button class="modal-close" onclick="closeConsumoModal()"><i class="ti ti-x"></i></button>
-    </div>
-    <div id="consumo-product" style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:.75rem 1rem;background:var(--bg);border-radius:var(--radius-md);border:1px solid var(--border)"></div>
-    <div id="consumo-lotes" style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem"></div>
-    <button class="btn primary" onclick="confirmarConsumo()"><i class="ti ti-check"></i> Confirmar</button>
-    <button class="btn ghost" onclick="closeConsumoModal()" style="margin-top:8px">Cancelar</button>
-  </div>
-</div>
-
-<!-- ══ MODAL EDICIÓN ══ -->
-<div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title">Editar producto</div>
-      <button class="modal-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
-    </div>
-    <div id="modal-preview" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem;margin-bottom:1rem">
-      <div style="display:flex;align-items:center;gap:10px">
-        <img id="modal-preview-img" src="" alt="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">
-        <div style="font-size:14px;font-weight:500;color:var(--text-primary)" id="modal-preview-name"></div>
-      </div>
-    </div>
-    <div class="form-row"><label>Nombre del producto</label><input type="text" id="edit-nombre" placeholder="Nombre"></div>
-    <div class="form-grid">
-      <div><label>Categoría</label><select id="edit-cat"></select></div>
-      <div><label>Ubicación</label><select id="edit-ubic"></select></div>
-    </div>
-    <div class="form-row"><label>Código de barras</label><input type="text" id="edit-barcode" inputmode="numeric"></div>
-    <button class="btn primary" onclick="saveEdit()"><i class="ti ti-check"></i> Guardar cambios</button>
-    <button class="btn ghost" onclick="closeEditModal()" style="margin-top:8px">Cancelar</button>
-  </div>
-</div>
-
-<script>
-// ─────────────────────────────────────────────
-//  SUPABASE
-// ─────────────────────────────────────────────
-const SUPABASE_URL = 'https://jecxvaiprnjwoyqdgbmo.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplY3h2YWlwcm5qd295cWRnYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNTA2NzksImV4cCI6MjA5NzcyNjY3OX0.iAxWkaAr0k4E3T31iqtqEWFmUCjh4GeiSevv7lCoMNo';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ─────────────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────────────
-let currentUser   = null;
-let currentHogar  = null;
-let productos     = [];
-let lotes         = [];
-let categorias    = [];
-let ubicaciones   = [];
-let qtyScan       = 1;
-let qtyManual     = 1;
-let currentBC     = '';
-let currentOFFImg = '';
-let currentFoundId = null;
-let editId        = null;
-let scanner       = null;
-let scanning      = false;
-let loteModalProductoId = null;
-let loteModalLoteId     = null;
-let loteQty             = 1;
-let consumoProductoId   = null;
-let consumoDelta        = {};
-let manualOFFImg        = '';
-let acIndex             = -1;
-
-// ─────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────
-function normalizarFecha(val) {
-  if (!val) return '';
-  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return '';
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-}
-function getEstado(f) {
-  if (!f) return 'ok';
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const diff = (new Date(f+'T00:00:00') - hoy) / 86400000;
-  return diff < 0 ? 'vencido' : diff <= 7 ? 'pronto' : 'ok';
-}
-function fmtF(f) {
-  if (!f) return '—';
-  const [y,m,d] = f.split('-');
-  return `${d}/${m}/${y}`;
-}
-function diasLabel(f) {
-  if (!f) return '';
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const diff = Math.round((new Date(f+'T00:00:00') - hoy) / 86400000);
-  if (diff < 0) return `Venció hace ${Math.abs(diff)} día${Math.abs(diff)!==1?'s':''}`;
-  if (diff === 0) return 'Vence hoy';
-  if (diff === 1) return 'Vence mañana';
-  return `Vence en ${diff} días`;
-}
-function lotesDeProducto(id) {
-  return lotes.filter(l => l.producto_id === id)
-    .sort((a,b) => {
-      if (!a.fecha_venc && !b.fecha_venc) return 0;
-      if (!a.fecha_venc) return 1;
-      if (!b.fecha_venc) return -1;
-      return a.fecha_venc.localeCompare(b.fecha_venc);
-    });
-}
-function totalCantidad(id) {
-  return lotesDeProducto(id).reduce((s, l) => s + (parseInt(l.cantidad) || 0), 0);
-}
-function estadoProducto(id) {
-  const pl = lotesDeProducto(id);
-  if (!pl.length) return 'ok';
-  const estados = pl.map(l => getEstado(l.fecha_venc));
-  if (estados.includes('vencido')) return 'vencido';
-  if (estados.includes('pronto'))  return 'pronto';
-  return 'ok';
-}
-function showToast(msg, duration=2200) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
-}
-function setSyncStatus(state) {
-  const dot = document.getElementById('sync-dot');
-  if (!dot) return;
-  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='error'?' error':'');
-}
-function setLoading(show, text='Cargando...') {
-  document.getElementById('loading-text').textContent = text;
-  document.getElementById('loading').classList.toggle('active', show);
-}
-function setSelectValue(id, value) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  for (const opt of sel.options) {
-    if (opt.value === value) { sel.value = value; return; }
-  }
-}
-
-// ─────────────────────────────────────────────
-//  AUTH
-// ─────────────────────────────────────────────
-function showAuthLogin() {
-  document.getElementById('auth-login').style.display = 'block';
-  document.getElementById('auth-register').style.display = 'none';
-}
-function showAuthRegister() {
-  document.getElementById('auth-login').style.display = 'none';
-  document.getElementById('auth-register').style.display = 'block';
-}
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value;
-  const err   = document.getElementById('login-error');
-  const btn   = document.getElementById('btn-login');
-  err.classList.remove('show');
-  if (!email || !pass) { err.textContent = 'Completá el email y la contraseña para continuar.'; err.classList.add('show'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '<i class="ti ti-loader" style="animation:spin .7s linear infinite"></i> Ingresando...';
-  try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) {
-      err.textContent = 'Email o contraseña incorrectos.'; err.classList.add('show');
-      btn.disabled = false;
-      btn.innerHTML = 'Ingresar';
-    }
-    // Si no hay error, onAuthStateChange maneja la navegación y restaura el botón
-  } catch (e) {
-    err.textContent = 'Error de conexión. Intentá de nuevo.'; err.classList.add('show');
-    btn.disabled = false;
-    btn.innerHTML = 'Ingresar';
-  }
-}
-async function doRegister() {
-  const nombre = document.getElementById('reg-nombre').value.trim();
-  const email  = document.getElementById('reg-email').value.trim();
-  const pass   = document.getElementById('reg-pass').value;
-  const err    = document.getElementById('reg-error');
-  err.classList.remove('show');
-  if (!nombre) { err.textContent = 'Ingresá tu nombre.'; err.classList.add('show'); return; }
-  if (!email)  { err.textContent = 'Ingresá tu email.'; err.classList.add('show'); return; }
-  if (!pass || pass.length < 6) { err.textContent = 'La contraseña debe tener al menos 6 caracteres.'; err.classList.add('show'); return; }
-  setLoading(true, 'Creando cuenta...');
-  const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { nombre } } });
-  setLoading(false);
-  if (error) { err.textContent = error.message; err.classList.add('show'); }
-  else { showToast('Cuenta creada — podés ingresar'); showAuthLogin(); }
-}
-async function doLogout() {
-  if (!confirm('Cerrar sesion?')) return;
-  limpiarSesionYRedirigir();
-}
-
-async function confirmarLogout() {
-  limpiarSesionYRedirigir();
-}
-
-function limpiarSesionYRedirigir() {
-  mostrarLogin();
-}
-
-async function limpiarSesion() {
-  try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
-  mostrarLogin();
-}
-
-function mostrarLogin() {
-  currentUser = null; currentHogar = null; appInitialized = false;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('hogar-screen').classList.remove('active');
-  document.getElementById('auth-screen').classList.add('active');
-  // Restaurar botón login por si quedó deshabilitado
-  const btn = document.getElementById('btn-login');
-  if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
-  setLoading(false);
-}
-
-// ─────────────────────────────────────────────
-//  HOGAR
-// ─────────────────────────────────────────────
-function showCrearHogar() {
-  document.getElementById('crear-hogar-form').style.display = 'flex';
-  document.getElementById('crear-hogar-form').style.flexDirection = 'column';
-  document.getElementById('crear-hogar-form').style.gap = '10px';
-  document.getElementById('unirse-hogar-form').style.display = 'none';
-}
-function showUnirseHogar() {
-  document.getElementById('unirse-hogar-form').style.display = 'flex';
-  document.getElementById('unirse-hogar-form').style.flexDirection = 'column';
-  document.getElementById('unirse-hogar-form').style.gap = '10px';
-  document.getElementById('crear-hogar-form').style.display = 'none';
-}
-function hideHogarForms() {
-  document.getElementById('crear-hogar-form').style.display = 'none';
-  document.getElementById('unirse-hogar-form').style.display = 'none';
-}
-async function doCrearHogar() {
-  const nombre = document.getElementById('hogar-nombre').value.trim();
-  const err    = document.getElementById('crear-error');
-  if (!nombre) { err.textContent = 'Ingresá un nombre'; err.classList.add('show'); return; }
-  setLoading(true, 'Creando hogar...');
-  const { data, error } = await sb.rpc('crear_hogar', { nombre_hogar: nombre });
-  setLoading(false);
-  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
-  currentHogar = data;
-  await loadApp();
-}
-async function doUnirseHogar() {
-  const codigo = document.getElementById('hogar-codigo').value.trim().toLowerCase();
-  const err    = document.getElementById('unirse-error');
-  if (!codigo) { err.textContent = 'Ingresá un código'; err.classList.add('show'); return; }
-  setLoading(true, 'Uniéndome al hogar...');
-  const { data, error } = await sb.rpc('unirse_a_hogar', { codigo_hogar: codigo });
-  setLoading(false);
-  if (error) { err.textContent = 'Código inválido o ya sos miembro'; err.classList.add('show'); return; }
-  currentHogar = data;
-  await loadApp();
-}
-function copiarCodigo() {
-  if (!currentHogar) return;
-  navigator.clipboard.writeText(currentHogar.codigo).then(() => showToast('✓ Código copiado'));
-}
-
-// ─────────────────────────────────────────────
-//  INIT
-// ─────────────────────────────────────────────
-let appInitialized = false;
-
-async function handleSession(user) {
-  if (!user) {
-    await limpiarSesion();
-    return;
-  }
-  currentUser = user;
-  try {
-    const { data: memData, error } = await sb.from('hogar_miembros')
-      .select('hogar_id, hogares(*)')
-      .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle();
-
-    // Token expirado o inválido
-    if (error?.status === 401 || error?.status === 403) {
-      await limpiarSesion();
-      return;
-    }
-
-    if (memData?.hogares) {
-      currentHogar = memData.hogares;
-      setLoading(false);
-      await loadApp();
-    } else {
-      setLoading(false);
-      document.getElementById('auth-screen').classList.remove('active');
-      document.getElementById('hogar-screen').classList.add('active');
-    }
-  } catch (e) {
-    setLoading(false);
-    document.getElementById('auth-screen').classList.add('active');
-  }
-}
-
-async function init() {
-  document.getElementById('auth-screen').classList.remove('active');
-  setLoading(true, 'Cargando...');
-
-  const killSwitch = setTimeout(() => {
-    if (!appInitialized) {
-      setLoading(false);
-      document.getElementById('auth-screen').classList.add('active');
-    }
-  }, 6000);
-
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    clearTimeout(killSwitch);
-    appInitialized = true;
-    await handleSession(session?.user ?? null);
-  } catch (e) {
-    clearTimeout(killSwitch);
-    setLoading(false);
-    document.getElementById('auth-screen').classList.add('active');
-  }
-}
-
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN') {
-    const btn = document.getElementById('btn-login');
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Ingresar'; }
-    if (!currentUser) await handleSession(session?.user ?? null);
-  }
-});
-
-init();
-
-async function loadApp() {
-  document.getElementById('auth-screen').classList.remove('active');
-  document.getElementById('hogar-screen').classList.remove('active');
-  document.getElementById('main-app').style.display = 'flex';
-  document.getElementById('main-app').style.flexDirection = 'column';
-
-  // Header
-  const email  = currentUser.email || '';
-  const nombre = currentUser.user_metadata?.nombre || email.split('@')[0];
-  const inicial = nombre[0]?.toUpperCase() || '?';
-  document.getElementById('hogar-badge').textContent   = currentHogar.nombre;
-  document.getElementById('header-avatar').textContent = inicial;
-  document.getElementById('settings-email').textContent      = email;
-  document.getElementById('settings-hogar-name').textContent = currentHogar.nombre;
-  document.getElementById('settings-codigo').textContent     = currentHogar.codigo;
-  document.getElementById('settings-avatar').textContent     = inicial;
-
-  setLoading(true, 'Cargando inventario...');
-  await fetchData();
-  setLoading(false);
-  renderList();
-}
-
-// ─────────────────────────────────────────────
-//  DATA — Supabase
-// ─────────────────────────────────────────────
-async function fetchData() {
-  setSyncStatus('syncing');
-  try {
-    const hid = currentHogar.id;
-    const [pRes, lRes, cRes, uRes] = await Promise.all([
-      sb.from('productos').select('*').eq('hogar_id', hid).order('agregado_at'),
-      sb.from('lotes').select('*, productos!inner(hogar_id)').eq('productos.hogar_id', hid),
-      sb.from('categorias').select('*').eq('hogar_id', hid).order('nombre'),
-      sb.from('ubicaciones').select('*').eq('hogar_id', hid).order('nombre'),
-    ]);
-
-    // Detectar token expirado en cualquiera de las llamadas
-    const authError = [pRes, lRes, cRes, uRes].find(r => r.error?.status === 401 || r.error?.status === 403);
-    if (authError) {
-      showToast('Sesión expirada — ingresá de nuevo');
-      await limpiarSesion();
-      return;
-    }
-
-    productos   = pRes.data  || [];
-    lotes       = lRes.data  || [];
-    categorias  = cRes.data  || [];
-    ubicaciones = uRes.data  || [];
-    renderSelects();
-    setSyncStatus('ok');
-  } catch (e) {
-    setSyncStatus('error');
-    showToast('Error al cargar datos');
-  }
-}
-
-// ─────────────────────────────────────────────
-//  SELECTS
-// ─────────────────────────────────────────────
-function renderSelects() {
-  ['new-cat','m-cat','edit-cat'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    const cur = el.value;
-    el.innerHTML = categorias.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
-    if (cur) el.value = cur;
-  });
-  ['new-ubic','m-ubic','edit-ubic'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    const cur = el.value;
-    el.innerHTML = '<option value="">— Sin ubicación —</option>' +
-      ubicaciones.map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
-    if (cur) el.value = cur;
-  });
-  const fc = document.getElementById('filter-cat');
-  if (fc) {
-    const cur = fc.value;
-    fc.innerHTML = '<option value="">Todas las categorías</option>' +
-      categorias.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
-    if (cur) fc.value = cur;
-  }
-  renderSettingsLists();
-}
-
-// ─────────────────────────────────────────────
-//  RENDER INVENTARIO
-// ─────────────────────────────────────────────
-function renderList() {
-  const fe   = document.getElementById('filter-est')?.value || '';
-  const fc   = document.getElementById('filter-cat')?.value || '';
-  const list = document.getElementById('product-list');
-  if (!list) return;
-
-  let filtrados = productos.filter(p => {
-    if (fe && estadoProducto(p.id) !== fe) return false;
-    if (fc && p.categoria !== fc) return false;
-    return true;
-  });
-  filtrados.sort((a,b) => {
-    const ord = {vencido:0,pronto:1,ok:2};
-    const d = ord[estadoProducto(a.id)] - ord[estadoProducto(b.id)];
-    if (d !== 0) return d;
-    const fa = lotesDeProducto(a.id)[0]?.fecha_venc || '';
-    const fb = lotesDeProducto(b.id)[0]?.fecha_venc || '';
-    return fa.localeCompare(fb);
-  });
-
-  const totalUnidades = productos.reduce((s,p) => s + totalCantidad(p.id), 0);
-  document.getElementById('stat-total').textContent   = totalUnidades;
-  document.getElementById('stat-pronto').textContent  = productos.filter(p => estadoProducto(p.id) === 'pronto').length;
-  document.getElementById('stat-vencido').textContent = productos.filter(p => estadoProducto(p.id) === 'vencido').length;
-
-  if (!filtrados.length) {
-    list.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>${productos.length===0?'Todavía no tenés productos.<br><small>Agregá uno desde Escanear o Manual.</small>':'No hay productos con ese filtro.'}</div>`;
-    return;
-  }
-
-  list.innerHTML = filtrados.map(p => {
-    const est    = estadoProducto(p.id);
-    const bl     = est==='vencido'?'Vencido':est==='pronto'?'Por vencer':'OK';
-    const total  = totalCantidad(p.id);
-    const pLotes = lotesDeProducto(p.id);
-    const img    = p.imagen_url
-      ? `<img src="${p.imagen_url}" alt="" class="card-img">`
-      : `<div class="card-img card-img-placeholder"><i class="ti ti-box"></i></div>`;
-    const lotesHTML = pLotes.length
-      ? pLotes.map(l => {
-          const le  = getEstado(l.fecha_venc);
-          const lbl = l.fecha_venc ? `${fmtF(l.fecha_venc)} · ${diasLabel(l.fecha_venc)}` : 'Sin fecha';
-          return `<div class="lote-row">
-            <span class="lote-dot ${le}"></span>
-            <span class="lote-qty">×${l.cantidad}</span>
-            <span class="lote-fecha">${lbl}</span>
-            <button class="lote-edit-btn" onclick="openLoteModal('${p.id}','${l.id}')"><i class="ti ti-pencil"></i></button>
-          </div>`;
-        }).join('')
-      : `<div class="lote-row muted"><span class="lote-fecha">Sin lotes — tocá + para agregar</span></div>`;
-
-    return `<div class="swipe-wrap" id="sw-${p.id}">
-      <div class="product-card ${est}" id="card-${p.id}">
-        <div class="card-top">
-          <span class="badge ${est}">${bl}</span>
-          <div class="prod-actions">
-            <button class="icon-btn" onclick="openLoteModal('${p.id}',null)" title="Agregar lote"><i class="ti ti-circle-plus"></i></button>
-            <button class="icon-btn" onclick="editProducto('${p.id}')" title="Editar"><i class="ti ti-edit"></i></button>
-            <button class="icon-btn" onclick="eliminarProducto('${p.id}')" title="Eliminar"><i class="ti ti-trash"></i></button>
-          </div>
-        </div>
-        <div class="card-body">
-          ${img}
-          <div class="card-main">
-            <div class="prod-name">${p.nombre}</div>
-            <div class="prod-meta">
-              <span>${p.categoria||''}</span>
-              ${p.ubicacion?`<span><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px"></i> ${p.ubicacion}</span>`:''}
+            <div id="off-search-wrap" style="display:none;margin-top:10px">
+              <button class="btn" onclick="searchOFF()" id="btn-off-search"><i class="ti ti-world"></i> Buscar en Open Food Facts</button>
             </div>
-            <div class="lotes-wrap">${lotesHTML}</div>
+            <button class="btn ghost" onclick="showManualBlank()"><i class="ti ti-pencil"></i> Cargar sin buscar</button>
           </div>
-          <div class="card-qty"><span class="qty-num" id="qty-${p.id}">×${total}</span></div>
         </div>
-        ${total>0?`<button class="btn-descontar" onclick="openConsumoModal('${p.id}')"><i class="ti ti-minus"></i> Descontar stock</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
 
-// ─────────────────────────────────────────────
-//  PRODUCTOS
-// ─────────────────────────────────────────────
-async function eliminarProducto(id) {
-  if (!confirm('¿Eliminar este producto?')) return;
-  setLoading(true,'Eliminando...');
-  await sb.from('productos').delete().eq('id', id);
-  productos = productos.filter(p => p.id !== id);
-  lotes     = lotes.filter(l => l.producto_id !== id);
-  renderList();
-  setLoading(false);
-  showToast('Producto eliminado');
-}
-
-function editProducto(id) {
-  const p = productos.find(x => x.id === id); if (!p) return;
-  editId = id;
-  document.getElementById('edit-nombre').value  = p.nombre || '';
-  document.getElementById('edit-barcode').value = p.barcode || '';
-  renderSelects();
-  setTimeout(() => {
-    setSelectValue('edit-cat', p.categoria || '');
-    setSelectValue('edit-ubic', p.ubicacion || '');
-  }, 50);
-  const preview = document.getElementById('modal-preview');
-  if (p.imagen_url) {
-    document.getElementById('modal-preview-img').src = p.imagen_url;
-    document.getElementById('modal-preview-name').textContent = p.nombre;
-    preview.style.display = 'block';
-  } else { preview.style.display = 'none'; }
-  document.getElementById('edit-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-async function saveEdit() {
-  const nombre = document.getElementById('edit-nombre').value.trim();
-  if (!nombre) { showToast('Ingresá el nombre'); return; }
-  const btn = document.querySelector('#edit-modal .btn.primary');
-  btn.disabled = true;
-  setLoading(true,'Guardando...');
-  const { error } = await sb.from('productos').update({
-    nombre,
-    categoria: document.getElementById('edit-cat').value,
-    ubicacion: document.getElementById('edit-ubic').value,
-    barcode:   document.getElementById('edit-barcode').value.trim()
-  }).eq('id', editId);
-  if (!error) {
-    const p = productos.find(x => x.id === editId);
-    if (p) { p.nombre = nombre; p.categoria = document.getElementById('edit-cat').value; p.ubicacion = document.getElementById('edit-ubic').value; p.barcode = document.getElementById('edit-barcode').value.trim(); }
-    renderList();
-    showToast('✓ Producto actualizado');
-    closeEditModal();
-  } else showToast('Error al guardar');
-  setLoading(false); btn.disabled = false;
-}
-
-function closeEditModal(e) {
-  if (e && e.target !== document.getElementById('edit-modal')) return;
-  document.getElementById('edit-modal').classList.remove('active');
-  document.body.style.overflow = '';
-  editId = null;
-}
-
-// ─────────────────────────────────────────────
-//  LOTES
-// ─────────────────────────────────────────────
-function openLoteModal(productoId, loteId) {
-  const p = productos.find(x => x.id === productoId); if (!p) return;
-  loteModalProductoId = productoId; loteModalLoteId = loteId;
-  const imgEl = p.imagen_url
-    ? `<img src="${p.imagen_url}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
-    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:18px"><i class="ti ti-box"></i></div>`;
-  document.getElementById('lote-modal-product').innerHTML = `${imgEl}<div><div style="font-size:14px;font-weight:500;color:var(--text-primary)">${p.nombre}</div><div style="font-size:12px;color:var(--text-secondary)">${p.categoria||''}${p.ubicacion?' · '+p.ubicacion:''}</div></div>`;
-  if (loteId) {
-    const l = lotes.find(x => x.id === loteId);
-    document.getElementById('lote-fecha').value = l?.fecha_venc || '';
-    document.getElementById('lote-modal-title').textContent = 'Editar fecha de lote';
-    document.getElementById('lote-qty-wrap').style.display = 'none';
-    document.getElementById('lote-delete-btn').style.display = 'flex';
-  } else {
-    loteQty = 1; document.getElementById('qty-lote').textContent = 1;
-    document.getElementById('lote-fecha').value = '';
-    document.getElementById('lote-modal-title').textContent = 'Agregar lote';
-    document.getElementById('lote-qty-wrap').style.display = 'block';
-    document.getElementById('lote-delete-btn').style.display = 'none';
-  }
-  document.getElementById('lote-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLoteModal(e) {
-  if (e && e.target !== document.getElementById('lote-modal')) return;
-  document.getElementById('lote-modal').classList.remove('active');
-  document.body.style.overflow = '';
-  loteModalProductoId = null; loteModalLoteId = null;
-}
-
-async function saveLote() {
-  const fecha = document.getElementById('lote-fecha').value;
-  const btn   = document.querySelector('#lote-modal .btn.primary');
-  btn.disabled = true;
-  setLoading(true,'Guardando lote...');
-  if (loteModalLoteId) {
-    const { error } = await sb.from('lotes').update({ fecha_venc: fecha || null }).eq('id', loteModalLoteId);
-    if (!error) { const l = lotes.find(x => x.id === loteModalLoteId); if (l) l.fecha_venc = fecha || null; }
-  } else {
-    const { data, error } = await sb.from('lotes').insert({ producto_id: loteModalProductoId, cantidad: loteQty, fecha_venc: fecha || null }).select().single();
-    if (!error && data) lotes.push(data);
-  }
-  renderList(); showToast('✓ Lote guardado'); closeLoteModal();
-  setLoading(false); btn.disabled = false;
-}
-
-async function deleteLote() {
-  if (!loteModalLoteId || !confirm('¿Eliminar este lote?')) return;
-  setLoading(true,'Eliminando...');
-  await sb.from('lotes').delete().eq('id', loteModalLoteId);
-  lotes = lotes.filter(l => l.id !== loteModalLoteId);
-  renderList(); showToast('Lote eliminado'); closeLoteModal();
-  setLoading(false);
-}
-
-// ─────────────────────────────────────────────
-//  CONSUMO
-// ─────────────────────────────────────────────
-function openConsumoModal(productoId) {
-  const p      = productos.find(x => x.id === productoId);
-  const pLotes = lotesDeProducto(productoId);
-  if (!p || !pLotes.length) { showToast('Sin lotes registrados'); return; }
-  consumoProductoId = productoId; consumoDelta = {};
-  const imgEl = p.imagen_url
-    ? `<img src="${p.imagen_url}" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border);flex-shrink:0">`
-    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-tertiary);font-size:18px"><i class="ti ti-box"></i></div>`;
-  document.getElementById('consumo-product').innerHTML = `${imgEl}<div><div style="font-size:14px;font-weight:500;color:var(--text-primary)">${p.nombre}</div><div style="font-size:12px;color:var(--text-secondary)">Indicá cuánto consumiste de cada lote</div></div>`;
-  document.getElementById('consumo-lotes').innerHTML = pLotes.map(l => {
-    const est = getEstado(l.fecha_venc);
-    const lbl = l.fecha_venc ? `${fmtF(l.fecha_venc)} · ${diasLabel(l.fecha_venc)}` : 'Sin fecha';
-    return `<div class="consumo-lote-row">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-        <span class="lote-dot ${est}"></span>
-        <div style="min-width:0">
-          <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Stock: ×<span id="cstock-${l.id}">${l.cantidad}</span></div>
-          <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
+        <div id="manual-form" class="form-section">
+          <div class="form-card">
+            <div class="form-card-title" id="manual-title">Nuevo producto</div>
+            <div class="form-row"><label>Nombre</label><input type="text" id="m-nombre" placeholder="Ej. Yerba"></div>
+            <div class="form-grid">
+              <div><label>Categoría</label><select id="m-cat"></select></div>
+              <div><label>Ubicación</label><select id="m-ubic"></select></div>
+            </div>
+            <div class="form-row"><label>Código de barras</label><input type="text" id="m-barcode" placeholder="Opcional"></div>
+            <div class="form-card" id="m-preview" style="display:none;padding:.875rem">
+              <div style="display:flex;align-items:center;gap:12px">
+                <img id="m-preview-img" alt="" class="card-img">
+                <div>
+                  <div class="status-name" id="m-preview-name">—</div>
+                  <div class="status-meta" id="m-preview-source">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div><label>Cantidad</label><div class="qty-control"><button class="qty-btn" onclick="changeQty(-1,'manual')">−</button><span class="qty-val" id="qty-manual">1</span><button class="qty-btn" onclick="changeQty(1,'manual')">+</button></div></div>
+              <div><label>Vencimiento</label><input type="date" id="m-fecha"></div>
+            </div>
+            <button class="btn primary" id="btn-save-manual" onclick="saveManual()"><i class="ti ti-check"></i> Guardar producto</button>
+            <button class="btn ghost" onclick="resetManualForm()">Cancelar</button>
+          </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <button class="qty-btn" onclick="stepConsumo('${l.id}',-1,${l.cantidad})">−</button>
-        <span class="qty-val" id="cdelta-${l.id}" style="font-family:var(--font-mono);font-weight:600;min-width:20px;text-align:center;color:var(--red)">0</span>
-        <button class="qty-btn" onclick="stepConsumo('${l.id}',1,${l.cantidad})">+</button>
+
+      <div id="page-ajustes" class="page">
+        <div class="settings-user">
+          <div class="settings-avatar" id="settings-avatar">?</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:600;color:#fff" id="settings-hogar-name">—</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75)" id="settings-email">—</div>
+          </div>
+          <button class="icon-btn" onclick="doLogout()" title="Cerrar sesión" style="color:#fff"><i class="ti ti-logout"></i></button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">Código del hogar</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="settings-hogar-code" id="settings-codigo">—</div>
+            <button class="btn" style="width:auto;padding:8px 14px;flex-shrink:0" onclick="copiarCodigo()"><i class="ti ti-copy"></i> Copiar</button>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">Categorías</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="new-cat-input" placeholder="Agregar categoría">
+            <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarCategoria()"><i class="ti ti-plus"></i></button>
+          </div>
+          <div id="settings-cats"></div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-card-title">Ubicaciones</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="new-ubic-input" placeholder="Agregar ubicación">
+            <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarUbicacion()"><i class="ti ti-plus"></i></button>
+          </div>
+          <div id="settings-ubics"></div>
+        </div>
       </div>
-    </div>`;
-  }).join('');
-  document.getElementById('consumo-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
+    </main>
 
-function stepConsumo(loteId, d, max) {
-  const cur = consumoDelta[loteId] || 0;
-  const nuevo = Math.max(0, Math.min(max, cur + d));
-  consumoDelta[loteId] = nuevo;
-  document.getElementById(`cdelta-${loteId}`).textContent = nuevo;
-  const l = lotes.find(x => x.id === loteId);
-  if (l) document.getElementById(`cstock-${loteId}`).textContent = l.cantidad - nuevo;
-}
+    <nav class="tabs">
+      <button class="tab active" id="tab-inventario" onclick="showPage('inventario')"><i class="ti ti-package"></i>Inventario<div class="tab-dot"></div></button>
+      <button class="tab" id="tab-scanner" onclick="showPage('scanner')"><i class="ti ti-barcode"></i>Escanear<div class="tab-dot"></div></button>
+      <button class="tab" id="tab-manual" onclick="showPage('manual')"><i class="ti ti-plus"></i>Manual<div class="tab-dot"></div></button>
+      <button class="tab" id="tab-ajustes" onclick="showPage('ajustes')"><i class="ti ti-settings"></i>Ajustes<div class="tab-dot"></div></button>
+    </nav>
+  </div>
 
-function closeConsumoModal(e) {
-  if (e && e.target !== document.getElementById('consumo-modal')) return;
-  document.getElementById('consumo-modal').classList.remove('active');
-  document.body.style.overflow = '';
-  consumoProductoId = null; consumoDelta = {};
-}
+  <div class="modal-overlay" id="lote-modal" onclick="closeLoteModal(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title" id="lote-modal-title">Agregar lote</div>
+        <button class="modal-close" onclick="closeLoteModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div id="lote-modal-product" style="display:flex;align-items:center;gap:12px;margin-bottom:1rem"></div>
+      <div id="lote-qty-wrap">
+        <label>Cantidad</label>
+        <div class="qty-control" style="margin-bottom:1rem">
+          <button class="qty-btn" onclick="changeQty(-1,'lote')">−</button>
+          <span class="qty-val" id="qty-lote">1</span>
+          <button class="qty-btn" onclick="changeQty(1,'lote')">+</button>
+        </div>
+      </div>
+      <div class="form-row"><label>Fecha de vencimiento</label><input type="date" id="lote-fecha"></div>
+      <button class="btn primary" onclick="saveLote()"><i class="ti ti-check"></i> Guardar lote</button>
+      <button class="btn ghost" id="lote-delete-btn" onclick="deleteLote()" style="margin-top:8px;color:var(--red);display:none"><i class="ti ti-trash"></i> Eliminar este lote</button>
+      <button class="btn ghost" onclick="closeLoteModal()" style="margin-top:8px">Cancelar</button>
+    </div>
+  </div>
 
-async function confirmarConsumo() {
-  const entradas = Object.entries(consumoDelta).filter(([,v]) => v > 0);
-  if (!entradas.length) { showToast('No indicaste nada para consumir'); return; }
-  const btn = document.querySelector('#consumo-modal .btn.primary');
-  btn.disabled = true; setLoading(true,'Guardando consumo...');
-  let total = 0;
-  for (const [loteId, delta] of entradas) {
-    const l = lotes.find(x => x.id === loteId); if (!l) continue;
-    const nueva = Math.max(0, l.cantidad - delta);
-    total += delta;
-    if (nueva === 0) {
-      await sb.from('lotes').delete().eq('id', loteId);
-      lotes = lotes.filter(x => x.id !== loteId);
-    } else {
-      await sb.from('lotes').update({ cantidad: nueva }).eq('id', loteId);
-      l.cantidad = nueva;
-    }
-  }
-  renderList(); showToast(`−${total} consumidos`);
-  document.getElementById('consumo-modal').classList.remove('active');
-  document.body.style.overflow = '';
-  consumoProductoId = null; consumoDelta = {};
-  setLoading(false); btn.disabled = false;
-}
+  <div class="modal-overlay" id="consumo-modal" onclick="closeConsumoModal(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Descontar stock</div>
+        <button class="modal-close" onclick="closeConsumoModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div id="consumo-product" style="display:flex;align-items:center;gap:12px;margin-bottom:1rem"></div>
+      <div id="consumo-lotes" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button class="btn primary" onclick="confirmarConsumo()"><i class="ti ti-check"></i> Confirmar</button>
+      <button class="btn ghost" onclick="closeConsumoModal()" style="margin-top:8px">Cancelar</button>
+    </div>
+  </div>
 
-// ─────────────────────────────────────────────
-//  AGREGAR PRODUCTO (scanner y manual)
-// ─────────────────────────────────────────────
-async function agregarProductoNuevo(nombre, categoria, ubicacion, barcode, imagenURL, cantidad, fechaVenc) {
-  const { data: prod, error } = await sb.from('productos').insert({
-    hogar_id:   currentHogar.id,
-    nombre, categoria, ubicacion, barcode,
-    imagen_url: imagenURL
-  }).select().single();
-  if (error || !prod) throw error;
-  if (cantidad) {
-    const { data: lote } = await sb.from('lotes').insert({
-      producto_id: prod.id, cantidad, fecha_venc: fechaVenc || null
-    }).select().single();
-    if (lote) lotes.push(lote);
-  }
-  productos.push(prod);
-  return prod;
-}
+  <div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Editar producto</div>
+        <button class="modal-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-card" id="modal-preview" style="display:none;padding:.875rem">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img id="modal-preview-img" alt="" class="card-img">
+          <div class="status-name" id="modal-preview-name">—</div>
+        </div>
+      </div>
+      <div class="form-row"><label>Nombre</label><input type="text" id="edit-nombre"></div>
+      <div class="form-grid">
+        <div><label>Categoría</label><select id="edit-cat"></select></div>
+        <div><label>Ubicación</label><select id="edit-ubic"></select></div>
+      </div>
+      <div class="form-row"><label>Código de barras</label><input type="text" id="edit-barcode"></div>
+      <button class="btn primary" onclick="saveEdit()"><i class="ti ti-check"></i> Guardar cambios</button>
+      <button class="btn ghost" onclick="closeEditModal()" style="margin-top:8px">Cancelar</button>
+    </div>
+  </div>
 
-// ─────────────────────────────────────────────
-//  OPEN FOOD FACTS
-// ─────────────────────────────────────────────
-async function fetchOFF(code) {
-  try {
-    const res  = await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
-    const data = await res.json();
-    if (data.status !== 1 || !data.product) return null;
-    const p    = data.product;
-    const nombre = p.product_name_es || p.product_name || '';
-    const img    = p.image_front_small_url || p.image_front_url || '';
-    const tags   = (p.categories_tags || []).join(' ').toLowerCase();
-    let cat = '';
-    if (tags.includes('bebida')||tags.includes('beverage')||tags.includes('drink')) cat='Bebidas';
-    else if (tags.includes('dairy')||tags.includes('lacteo')||tags.includes('leche')) cat='Lácteos';
-    else if (tags.includes('cereal')||tags.includes('pasta')||tags.includes('arroz')) cat='Cereales';
-    else if (tags.includes('snack')||tags.includes('chip')||tags.includes('galleta')) cat='Snacks';
-    else if (tags.includes('sauce')||tags.includes('condiment')||tags.includes('aceite')) cat='Condimentos';
-    else if (tags.includes('canned')||tags.includes('conserva')) cat='Enlatados';
-    return { nombre: nombre.trim(), img, cat };
-  } catch { return null; }
-}
-
-// ─────────────────────────────────────────────
-//  SCANNER
-// ─────────────────────────────────────────────
-function setScanState(name) {
-  document.querySelectorAll('#page-scanner .form-section').forEach(s => s.classList.remove('active'));
-  document.getElementById('scan-'+name).classList.add('active');
-}
-function showManualInput() { setScanState('manual'); document.getElementById('manual-bc').value = ''; }
-function lookupManual() { const c = document.getElementById('manual-bc').value.trim(); if (c) lookupBarcode(c); }
-
-async function lookupBarcode(code) {
-  currentBC = code; currentOFFImg = ''; qtyScan = 1;
-  document.querySelectorAll('#qty-scan').forEach(el => el.textContent = 1);
-  const existing = productos.find(p => p.barcode === String(code));
-  if (existing) {
-    currentFoundId = existing.id;
-    document.getElementById('found-name').textContent = existing.nombre;
-    document.getElementById('found-meta').textContent = [existing.categoria, existing.ubicacion].filter(Boolean).join(' · ');
-    document.getElementById('found-fecha').value = '';
-    const imgEl = document.getElementById('found-img');
-    if (existing.imagen_url) { imgEl.src = existing.imagen_url; imgEl.style.display = 'block'; } else { imgEl.style.display = 'none'; }
-    setScanState('found');
-  } else {
-    currentFoundId = null;
-    document.getElementById('new-nombre').value = '';
-    document.getElementById('new-fecha').value  = '';
-    document.getElementById('off-preview').style.display = 'none';
-    setScanState('new');
-    setLoading(true,'Buscando producto...');
-    const off = await fetchOFF(code);
-    setLoading(false);
-    if (off) {
-      if (off.nombre) document.getElementById('new-nombre').value = off.nombre;
-      if (off.cat)    setSelectValue('new-cat', off.cat);
-      if (off.img) {
-        currentOFFImg = off.img;
-        document.getElementById('new-img').src = off.img;
-        document.getElementById('off-product-name').textContent = off.nombre || '';
-        document.getElementById('off-preview').style.display = 'flex';
-      }
-    }
-  }
-}
-
-async function saveFound() {
-  const p = productos.find(x => x.id === currentFoundId); if (!p) return;
-  setLoading(true,'Guardando...');
-  const fecha = document.getElementById('found-fecha').value;
-  const { data: lote } = await sb.from('lotes').insert({ producto_id: p.id, cantidad: qtyScan, fecha_venc: fecha || null }).select().single();
-  if (lote) lotes.push(lote);
-  renderList(); showToast('✓ Lote agregado'); setScanState('idle'); showPage('inventario');
-  setLoading(false);
-}
-
-async function saveNew() {
-  const nombre = document.getElementById('new-nombre').value.trim();
-  if (!nombre) { showToast('Ingresá el nombre del producto'); return; }
-  setLoading(true,'Guardando...');
-  try {
-    await agregarProductoNuevo(
-      nombre,
-      document.getElementById('new-cat').value,
-      document.getElementById('new-ubic').value,
-      currentBC, currentOFFImg, qtyScan,
-      document.getElementById('new-fecha').value
-    );
-    renderList(); showToast('✓ Producto agregado'); setScanState('idle'); showPage('inventario');
-  } catch { showToast('Error al guardar'); }
-  setLoading(false);
-}
-
-async function startScan() {
-  setScanState('scanning');
-  document.getElementById('video-wrap').style.display = 'block';
-  try {
-    scanner = new Html5Qrcode('scan-video'); scanning = true;
-    await scanner.start({ facingMode:'environment' },
-      { fps:10, qrbox:{width:250,height:150}, formatsToSupport:[
-        Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.UPC_A
-      ]},
-      (decoded) => { stopScan(); lookupBarcode(decoded); },
-      () => {}
-    );
-  } catch(e) { goIdleScan(); showToast('No se pudo acceder a la cámara: '+(e.message||e)); }
-}
-async function stopScan() {
-  if (scanner) { try { await scanner.stop(); } catch {} try { scanner.clear(); } catch {} scanner = null; }
-  scanning = false; document.getElementById('video-wrap').style.display = 'none';
-}
-function goIdleScan() { stopScan(); setScanState('idle'); currentBC=''; currentFoundId=null; currentOFFImg=''; qtyScan=1; }
-
-// ─────────────────────────────────────────────
-//  MANUAL FORM
-// ─────────────────────────────────────────────
-function setManualState(name) {
-  document.querySelectorAll('#page-manual .form-section').forEach(s => s.classList.remove('active'));
-  document.getElementById('manual-'+name).classList.add('active');
-}
-function showManualBlank() {
-  manualOFFImg=''; editId=null;
-  document.getElementById('m-preview').style.display='none';
-  document.getElementById('m-nombre').value='';
-  document.getElementById('m-fecha').value='';
-  document.getElementById('m-barcode').value='';
-  document.getElementById('manual-title').textContent='Nuevo producto';
-  qtyManual=1; document.getElementById('qty-manual').textContent=1;
-  setManualState('form');
-}
-function fillManualFromProduct(p) {
-  editId=p.id; manualOFFImg=p.imagen_url||'';
-  document.getElementById('m-nombre').value  = p.nombre||'';
-  document.getElementById('m-fecha').value   = '';
-  document.getElementById('m-barcode').value = p.barcode||'';
-  document.getElementById('manual-title').textContent = 'Editar producto';
-  qtyManual=1; document.getElementById('qty-manual').textContent=1;
-  renderSelects();
-  setTimeout(() => { setSelectValue('m-cat', p.categoria||''); setSelectValue('m-ubic', p.ubicacion||''); }, 50);
-  if (p.imagen_url) {
-    document.getElementById('m-preview-img').src = p.imagen_url;
-    document.getElementById('m-preview-name').textContent = p.nombre;
-    document.getElementById('m-preview-source').textContent = 'Producto existente';
-    document.getElementById('m-preview').style.display = 'block';
-  } else document.getElementById('m-preview').style.display = 'none';
-  setManualState('form');
-}
-async function fillManualFromOFF(off) {
-  editId=null; manualOFFImg=off.img||'';
-  if (off.nombre) document.getElementById('m-nombre').value = off.nombre;
-  if (off.cat)    setSelectValue('m-cat', off.cat);
-  document.getElementById('manual-title').textContent = 'Nuevo producto';
-  if (off.img) {
-    document.getElementById('m-preview-img').src = off.img;
-    document.getElementById('m-preview-name').textContent = off.nombre||'';
-    document.getElementById('m-preview-source').textContent = 'Open Food Facts';
-    document.getElementById('m-preview').style.display = 'block';
-  } else document.getElementById('m-preview').style.display = 'none';
-  setManualState('form');
-}
-async function searchOFF() {
-  const q = document.getElementById('m-search').value.trim(); if (!q) return;
-  const btn = document.getElementById('btn-off-search');
-  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader" style="animation:spin .7s linear infinite"></i> Buscando...';
-  setLoading(true,'Buscando en Open Food Facts...');
-  const off = await fetchOFF(q);
-  setLoading(false); btn.disabled=false; btn.innerHTML='<i class="ti ti-world"></i> Buscar en Open Food Facts';
-  if (off && (off.nombre||off.img)) { await fillManualFromOFF(off); }
-  else { showToast('No encontrado — cargalo manualmente'); showManualBlank(); if (q.match(/^\d+$/)) document.getElementById('m-barcode').value=q; else document.getElementById('m-nombre').value=q; }
-}
-async function saveManual() {
-  const nombre = document.getElementById('m-nombre').value.trim();
-  if (!nombre) { showToast('Ingresá el nombre del producto'); return; }
-  const btn = document.getElementById('btn-save-manual');
-  btn.disabled=true; setLoading(true, editId?'Guardando cambios...':'Guardando producto...');
-  try {
-    if (editId) {
-      await sb.from('productos').update({ nombre, categoria:document.getElementById('m-cat').value, ubicacion:document.getElementById('m-ubic').value, barcode:document.getElementById('m-barcode').value.trim() }).eq('id',editId);
-      const p = productos.find(x=>x.id===editId);
-      if (p) { p.nombre=nombre; p.categoria=document.getElementById('m-cat').value; p.ubicacion=document.getElementById('m-ubic').value; p.barcode=document.getElementById('m-barcode').value.trim(); }
-      // Si viene con cantidad/fecha agregar lote
-      const fecha = document.getElementById('m-fecha').value;
-      if (qtyManual > 0 && fecha) {
-        const { data: lote } = await sb.from('lotes').insert({ producto_id:editId, cantidad:qtyManual, fecha_venc:fecha||null }).select().single();
-        if (lote) lotes.push(lote);
-      }
-      showToast('✓ Producto actualizado');
-    } else {
-      await agregarProductoNuevo(nombre, document.getElementById('m-cat').value, document.getElementById('m-ubic').value, document.getElementById('m-barcode').value.trim(), manualOFFImg, qtyManual, document.getElementById('m-fecha').value);
-      showToast('✓ Producto guardado');
-    }
-    renderList(); resetManualForm(); showPage('inventario');
-  } catch { showToast('Error al guardar'); }
-  setLoading(false); btn.disabled=false;
-}
-function resetManualForm() {
-  editId=null; manualOFFImg='';
-  document.getElementById('m-search').value='';
-  document.getElementById('ac-list').innerHTML='';
-  document.getElementById('ac-list').classList.remove('open');
-  document.getElementById('off-search-wrap').style.display='none';
-  setManualState('search');
-}
-
-// ─────────────────────────────────────────────
-//  AUTOCOMPLETE
-// ─────────────────────────────────────────────
-function acInput(val) {
-  const list=document.getElementById('ac-list');
-  const offWrap=document.getElementById('off-search-wrap');
-  acIndex=-1;
-  if (!val.trim()) { list.classList.remove('open'); list.innerHTML=''; offWrap.style.display='none'; return; }
-  offWrap.style.display='block';
-  const q=val.toLowerCase();
-  const seen=new Set();
-  const matches=productos.filter(p => {
-    const n=(p.nombre||'').toLowerCase();
-    const b=(p.barcode||'').toLowerCase();
-    if (!n.includes(q)&&!b.includes(q)) return false;
-    if (seen.has(p.nombre)) return false;
-    seen.add(p.nombre); return true;
-  }).slice(0,6);
-  if (!matches.length) { list.classList.remove('open'); list.innerHTML=''; return; }
-  list.innerHTML = matches.map((p,i) => {
-    const imgEl=p.imagen_url?`<img src="${p.imagen_url}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:var(--bg);border:1px solid var(--border);flex-shrink:0">`:`<div style="width:36px;height:36px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:var(--text-tertiary)"><i class="ti ti-box"></i></div>`;
-    return `<div class="autocomplete-item" data-index="${i}" onmousedown="acSelectProduct(event,'${p.id}')" style="flex-direction:row;align-items:center;gap:10px">${imgEl}<div style="min-width:0"><strong>${highlight(p.nombre,val)}</strong><small>${[p.categoria,p.ubicacion].filter(Boolean).join(' · ')}</small></div></div>`;
-  }).join('');
-  list.classList.add('open');
-}
-function acSelectProduct(e,id) { e.preventDefault(); document.getElementById('ac-list').classList.remove('open'); const p=productos.find(x=>x.id===id); if(p) fillManualFromProduct(p); }
-function highlight(text,q) { const idx=text.toLowerCase().indexOf(q.toLowerCase()); if(idx===-1) return text; return text.slice(0,idx)+`<mark style="background:var(--red-light);color:var(--red);border-radius:2px;padding:0 1px">${text.slice(idx,idx+q.length)}</mark>`+text.slice(idx+q.length); }
-function acKeydown(e) {
-  const list=document.getElementById('ac-list');
-  const items=list.querySelectorAll('.autocomplete-item');
-  if (!items.length) return;
-  if (e.key==='ArrowDown') { e.preventDefault(); acIndex=Math.min(acIndex+1,items.length-1); items.forEach((el,i)=>el.classList.toggle('selected',i===acIndex)); }
-  else if (e.key==='ArrowUp') { e.preventDefault(); acIndex=Math.max(acIndex-1,0); items.forEach((el,i)=>el.classList.toggle('selected',i===acIndex)); }
-  else if (e.key==='Enter'&&acIndex>=0) { e.preventDefault(); items[acIndex].dispatchEvent(new MouseEvent('mousedown')); }
-  else if (e.key==='Escape') list.classList.remove('open');
-}
-function acBlur() { setTimeout(()=>document.getElementById('ac-list').classList.remove('open'),150); }
-
-// ─────────────────────────────────────────────
-//  AJUSTES — Categorías y Ubicaciones
-// ─────────────────────────────────────────────
-function renderSettingsLists() {
-  const catsEl  = document.getElementById('settings-cats');
-  const ubicsEl = document.getElementById('settings-ubics');
-  if (!catsEl||!ubicsEl) return;
-  catsEl.innerHTML = categorias.length
-    ? categorias.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px">${c.nombre}</span><button class="icon-btn" onclick="eliminarCategoria('${c.id}','${c.nombre}')"><i class="ti ti-trash"></i></button></div>`).join('')
-    : '<p style="font-size:13px;color:var(--text-tertiary);padding:8px 0">Sin categorías todavía</p>';
-  ubicsEl.innerHTML = ubicaciones.length
-    ? ubicaciones.map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px">${u.nombre}</span><button class="icon-btn" onclick="eliminarUbicacion('${u.id}','${u.nombre}')"><i class="ti ti-trash"></i></button></div>`).join('')
-    : '<p style="font-size:13px;color:var(--text-tertiary);padding:8px 0">Sin ubicaciones todavía</p>';
-}
-async function agregarCategoria() {
-  const input=document.getElementById('new-cat-input');
-  const nombre=input.value.trim(); if (!nombre) return;
-  if (categorias.find(c=>c.nombre===nombre)) { showToast('Ya existe esa categoría'); return; }
-  setLoading(true,'Guardando...');
-  const {data}=await sb.from('categorias').insert({hogar_id:currentHogar.id,nombre}).select().single();
-  if (data) { categorias.push(data); renderSelects(); input.value=''; showToast('✓ Categoría agregada'); }
-  setLoading(false);
-}
-async function eliminarCategoria(id) {
-  if (!confirm('¿Eliminar esta categoría?')) return;
-  setLoading(true,'Eliminando...');
-  await sb.from('categorias').delete().eq('id',id);
-  categorias=categorias.filter(c=>c.id!==id); renderSelects(); showToast('Categoría eliminada');
-  setLoading(false);
-}
-async function agregarUbicacion() {
-  const input=document.getElementById('new-ubic-input');
-  const nombre=input.value.trim(); if (!nombre) return;
-  if (ubicaciones.find(u=>u.nombre===nombre)) { showToast('Ya existe esa ubicación'); return; }
-  setLoading(true,'Guardando...');
-  const {data}=await sb.from('ubicaciones').insert({hogar_id:currentHogar.id,nombre}).select().single();
-  if (data) { ubicaciones.push(data); renderSelects(); input.value=''; showToast('✓ Ubicación agregada'); }
-  setLoading(false);
-}
-async function eliminarUbicacion(id) {
-  if (!confirm('¿Eliminar esta ubicación?')) return;
-  setLoading(true,'Eliminando...');
-  await sb.from('ubicaciones').delete().eq('id',id);
-  ubicaciones=ubicaciones.filter(u=>u.id!==id); renderSelects(); showToast('Ubicación eliminada');
-  setLoading(false);
-}
-
-// ─────────────────────────────────────────────
-//  QTY
-// ─────────────────────────────────────────────
-function changeQty(d, ctx) {
-  if (ctx==='scan') { qtyScan=Math.max(1,qtyScan+d); document.querySelectorAll('#qty-scan').forEach(el=>el.textContent=qtyScan); }
-  else if (ctx==='lote') { loteQty=Math.max(1,loteQty+d); document.getElementById('qty-lote').textContent=loteQty; }
-  else { qtyManual=Math.max(1,qtyManual+d); document.getElementById('qty-manual').textContent=qtyManual; }
-}
-
-// ─────────────────────────────────────────────
-//  NAV
-// ─────────────────────────────────────────────
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
-  if (name==='inventario') renderList();
-  if (name==='manual') resetManualForm();
-  if (name!=='scanner'&&scanning) stopScan();
-}
-</script>
+  <script type="module" src="/src/js/main.js"></script>
 </body>
 </html>
