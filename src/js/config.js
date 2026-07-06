@@ -6,3 +6,10 @@ if (!VITE_SUPABASE_URL || !VITE_SUPABASE_ANON_KEY) {
 
 export const SUPABASE_URL = VITE_SUPABASE_URL;
 export const SUPABASE_KEY = VITE_SUPABASE_ANON_KEY;
+
+export function getAuthRedirectUrl() {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}

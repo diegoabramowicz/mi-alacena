@@ -4,9 +4,10 @@ import { fetchOFF } from "../services/open-food-facts.js";
 import { agregarProductoNuevo } from "./data.js";
 import { renderList } from "./render.js";
 import { showPage } from "./navigation.js";
-import { setLoading, setSelectValue, showToast } from "../utils/ui.js";
+import { clearInlineError, setInlineError, setLoading, setSelectValue, showToast } from "../utils/ui.js";
 
 export function setScanState(name) {
+  clearInlineError("scan-new-error");
   document.querySelectorAll("#page-scanner .form-section").forEach((section) => section.classList.remove("active"));
   document.getElementById(`scan-${name}`).classList.add("active");
 }
@@ -85,9 +86,10 @@ export async function saveFound() {
 }
 
 export async function saveNew() {
+  clearInlineError("scan-new-error");
   const nombre = document.getElementById("new-nombre").value.trim();
   if (!nombre) {
-    showToast("Ingresá el nombre del producto");
+    setInlineError("scan-new-error", "Ingresá el nombre del producto.");
     return;
   }
 
@@ -107,7 +109,7 @@ export async function saveNew() {
     setScanState("idle");
     showPage("inventario");
   } catch {
-    showToast("Error al guardar");
+    setInlineError("scan-new-error", "No pudimos guardar el producto.");
   }
   setLoading(false);
 }
@@ -135,7 +137,7 @@ export async function startScan() {
     );
   } catch (error) {
     goIdleScan();
-    showToast(`No se pudo acceder a la cámara: ${error.message || error}`);
+    showToast("No se pudo acceder a la cámara desde este dispositivo o navegador.");
   }
 }
 

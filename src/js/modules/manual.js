@@ -4,7 +4,7 @@ import { fetchOFF } from "../services/open-food-facts.js";
 import { agregarProductoNuevo } from "./data.js";
 import { showPage } from "./navigation.js";
 import { renderList, renderSelects } from "./render.js";
-import { setLoading, setSelectValue, showToast } from "../utils/ui.js";
+import { clearInlineError, setInlineError, setLoading, setSelectValue, showToast } from "../utils/ui.js";
 
 export function setManualState(name) {
   document.querySelectorAll("#page-manual .form-section").forEach((section) => section.classList.remove("active"));
@@ -12,6 +12,7 @@ export function setManualState(name) {
 }
 
 export function showManualBlank() {
+  clearInlineError("manual-error");
   state.manualOFFImg = "";
   state.editId = null;
   document.getElementById("m-preview").style.display = "none";
@@ -25,6 +26,7 @@ export function showManualBlank() {
 }
 
 export function fillManualFromProduct(producto) {
+  clearInlineError("manual-error");
   state.editId = producto.id;
   state.manualOFFImg = producto.imagen_url || "";
   document.getElementById("m-nombre").value = producto.nombre || "";
@@ -50,6 +52,7 @@ export function fillManualFromProduct(producto) {
 }
 
 export async function fillManualFromOFF(off) {
+  clearInlineError("manual-error");
   state.editId = null;
   state.manualOFFImg = off.img || "";
   if (off.nombre) document.getElementById("m-nombre").value = off.nombre;
@@ -92,9 +95,10 @@ export async function searchOFF() {
 }
 
 export async function saveManual() {
+  clearInlineError("manual-error");
   const nombre = document.getElementById("m-nombre").value.trim();
   if (!nombre) {
-    showToast("Ingresá el nombre del producto");
+    setInlineError("manual-error", "Ingresá el nombre del producto.");
     return;
   }
 
@@ -146,7 +150,7 @@ export async function saveManual() {
     resetManualForm();
     showPage("inventario");
   } catch {
-    showToast("Error al guardar");
+    setInlineError("manual-error", "No pudimos guardar el producto.");
   }
 
   setLoading(false);
@@ -154,6 +158,7 @@ export async function saveManual() {
 }
 
 export function resetManualForm() {
+  clearInlineError("manual-error");
   state.editId = null;
   state.manualOFFImg = "";
   document.getElementById("m-search").value = "";
@@ -194,8 +199,8 @@ export function acInput(val) {
 
   list.innerHTML = matches.map((producto, index) => {
     const img = producto.imagen_url
-      ? `<img src="${producto.imagen_url}" alt="" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:var(--bg);border:1px solid var(--border);flex-shrink:0">`
-      : '<div style="width:36px;height:36px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:var(--text-tertiary)"><i class="ti ti-box"></i></div>';
+      ? `<img src="${producto.imagen_url}" alt="" class="product-tiny-shot">`
+      : '<div class="product-tiny-shot product-tiny-shot-placeholder"><i class="ti ti-box"></i></div>';
     return `<div class="autocomplete-item" data-index="${index}" onmousedown="acSelectProduct(event,'${producto.id}')">${img}<div style="min-width:0"><strong>${highlight(producto.nombre, val)}</strong><small>${[producto.categoria, producto.ubicacion].filter(Boolean).join(" · ")}</small></div></div>`;
   }).join("");
   list.classList.add("open");

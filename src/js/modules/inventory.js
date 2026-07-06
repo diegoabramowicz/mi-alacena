@@ -1,17 +1,27 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { renderList, renderSelects } from "./render.js";
-import { setLoading, setSelectValue, showToast, toggleBodyScroll } from "../utils/ui.js";
+import { clearInlineError, openConfirmModal, setInlineError, setLoading, setSelectValue, showToast, toggleBodyScroll } from "../utils/ui.js";
 
-export async function eliminarProducto(id) {
-  if (!window.confirm("¿Eliminar este producto?")) return;
-  setLoading(true, "Eliminando...");
-  await sb.from("productos").delete().eq("id", id);
-  state.productos = state.productos.filter((producto) => producto.id !== id);
-  state.lotes = state.lotes.filter((lote) => lote.producto_id !== id);
-  renderList();
-  setLoading(false);
-  showToast("Producto eliminado");
+export function eliminarProducto(id) {
+  const producto = state.productos.find((item) => item.id === id);
+  openConfirmModal({
+    title: "Eliminar producto",
+    message: producto
+      ? `Se va a eliminar "${producto.nombre}" junto con todos sus lotes.`
+      : "Se va a eliminar este producto junto con todos sus lotes.",
+    confirmLabel: "Eliminar producto",
+    confirmTone: "danger",
+    onConfirm: async () => {
+      setLoading(true, "Eliminando...");
+      await sb.from("productos").delete().eq("id", id);
+      state.productos = state.productos.filter((item) => item.id !== id);
+      state.lotes = state.lotes.filter((lote) => lote.producto_id !== id);
+      renderList();
+      setLoading(false);
+      showToast("Producto eliminado");
+    },
+  });
 }
 
 export function editProducto(id) {
@@ -41,9 +51,10 @@ export function editProducto(id) {
 }
 
 export async function saveEdit() {
+  clearInlineError("edit-error");
   const nombre = document.getElementById("edit-nombre").value.trim();
   if (!nombre) {
-    showToast("Ingresá el nombre");
+    setInlineError("edit-error", "Ingresá el nombre del producto.");
     return;
   }
 
@@ -69,7 +80,7 @@ export async function saveEdit() {
     showToast("✓ Producto actualizado");
     closeEditModal();
   } else {
-    showToast("Error al guardar");
+    setInlineError("edit-error", "No pudimos guardar los cambios.");
   }
 
   setLoading(false);
@@ -81,4 +92,5 @@ export function closeEditModal(event) {
   document.getElementById("edit-modal").classList.remove("active");
   toggleBodyScroll(false);
   state.editId = null;
+  clearInlineError("edit-error");
 }

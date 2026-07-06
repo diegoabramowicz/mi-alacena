@@ -1,37 +1,52 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { loadApp } from "./auth.js";
-import { setLoading, showToast } from "../utils/ui.js";
+import { clearInlineError, setInlineError, setLoading, showToast } from "../utils/ui.js";
+
+function setHomeStep(nextStep) {
+  document.querySelectorAll(".home-step").forEach((node) => node.classList.remove("active"));
+  const step = document.getElementById(nextStep);
+  if (step) step.classList.add("active");
+}
+
+function clearHomeErrors() {
+  clearInlineError("crear-error", "unirse-error");
+}
+
+function showHomeError(id, message) {
+  setInlineError(id, message);
+}
+
+function normalizeHomeError(message, fallback) {
+  const raw = (message || "").toLowerCase();
+  if (!raw) return fallback;
+  if (raw.includes("duplicate") || raw.includes("already")) return fallback;
+  if (raw.includes("invalid")) return fallback;
+  if (raw.includes("network") || raw.includes("fetch")) return "Tuvimos un problema de conexión. Inténtalo de nuevo.";
+  return fallback;
+}
 
 export function showCrearHogar() {
-  const crear = document.getElementById("crear-hogar-form");
-  const unirse = document.getElementById("unirse-hogar-form");
-  crear.style.display = "flex";
-  crear.style.flexDirection = "column";
-  crear.style.gap = "10px";
-  unirse.style.display = "none";
+  clearHomeErrors();
+  setHomeStep("home-create");
 }
 
 export function showUnirseHogar() {
-  const crear = document.getElementById("crear-hogar-form");
-  const unirse = document.getElementById("unirse-hogar-form");
-  unirse.style.display = "flex";
-  unirse.style.flexDirection = "column";
-  unirse.style.gap = "10px";
-  crear.style.display = "none";
+  clearHomeErrors();
+  setHomeStep("home-join");
 }
 
 export function hideHogarForms() {
-  document.getElementById("crear-hogar-form").style.display = "none";
-  document.getElementById("unirse-hogar-form").style.display = "none";
+  clearHomeErrors();
+  setHomeStep("home-choice");
 }
 
 export async function doCrearHogar() {
   const nombre = document.getElementById("hogar-nombre").value.trim();
   const err = document.getElementById("crear-error");
+  clearHomeErrors();
   if (!nombre) {
-    err.textContent = "Ingresá un nombre";
-    err.classList.add("show");
+    showHomeError("crear-error", "Dale un nombre a tu hogar para continuar.");
     return;
   }
 
@@ -39,8 +54,7 @@ export async function doCrearHogar() {
   const { data, error } = await sb.rpc("crear_hogar", { nombre_hogar: nombre });
   setLoading(false);
   if (error) {
-    err.textContent = error.message;
-    err.classList.add("show");
+    showHomeError("crear-error", normalizeHomeError(error.message, "No pudimos crear tu hogar."));
     return;
   }
   state.currentHogar = data;
@@ -50,9 +64,9 @@ export async function doCrearHogar() {
 export async function doUnirseHogar() {
   const codigo = document.getElementById("hogar-codigo").value.trim().toLowerCase();
   const err = document.getElementById("unirse-error");
+  clearHomeErrors();
   if (!codigo) {
-    err.textContent = "Ingresá un código";
-    err.classList.add("show");
+    showHomeError("unirse-error", "Ingresá el código que te compartieron.");
     return;
   }
 
@@ -60,8 +74,7 @@ export async function doUnirseHogar() {
   const { data, error } = await sb.rpc("unirse_a_hogar", { codigo_hogar: codigo });
   setLoading(false);
   if (error) {
-    err.textContent = "Código inválido o ya sos miembro";
-    err.classList.add("show");
+    showHomeError("unirse-error", normalizeHomeError(error.message, "Ese código no es válido o ya formas parte de ese hogar."));
     return;
   }
   state.currentHogar = data;

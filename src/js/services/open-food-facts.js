@@ -6,7 +6,7 @@ export async function fetchOFF(code) {
 
     const product = data.product;
     const nombre = product.product_name_es || product.product_name || "";
-    const img = product.image_front_small_url || product.image_front_url || "";
+    const img = product.image_front_url || product.image_front_small_url || "";
     const tags = (product.categories_tags || []).join(" ").toLowerCase();
 
     let cat = "";

@@ -1,6 +1,6 @@
-# mi alacena
+# Nestia
 
-Aplicacion web para llevar inventario del hogar: productos, lotes, vencimientos, consumo, carga manual y escaneo de codigo de barras.
+Aplicacion web para organizar la alimentacion del hogar: productos, lotes, vencimientos, consumo, carga manual y escaneo de codigo de barras.
 
 ## Estado actual
 

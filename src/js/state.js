@@ -14,17 +14,22 @@ export const state = {
   scanner: null,
   scanning: false,
   loteModalProductoId: null,
-  loteModalLoteId: null,
   loteQty: 1,
   consumoProductoId: null,
   consumoDelta: {},
   manualOFFImg: "",
   acIndex: -1,
   appInitialized: false,
+  expandedProductLotes: {},
+  lastInventoryFilterKey: "",
+  openProductMenuId: null,
 };
 
 export function resetSessionState() {
   state.currentUser = null;
   state.currentHogar = null;
   state.appInitialized = false;
+  state.expandedProductLotes = {};
+  state.lastInventoryFilterKey = "";
+  state.openProductMenuId = null;
 }

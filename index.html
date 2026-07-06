@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>mi alacena</title>
+  <title>Nestia</title>
+  <link rel="icon" type="image/png" href="/src/img/logo/nestia-logo-inverted.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
   <link rel="stylesheet" href="/src/styles/main.css">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -19,37 +20,278 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <div class="auth-screen active" id="auth-screen">
-    <div class="auth-box">
-      <div class="auth-logo">
-        <div class="auth-logo-icon"><i class="ti ti-box"></i></div>
-        <div class="auth-logo-text">mi<span>alacena</span></div>
-      </div>
+  <div class="public-home" id="public-home">
+    <header class="marketing-header">
+      <div class="marketing-header-inner">
+        <a href="#home" class="marketing-brand">
+          <img class="brand-mark marketing-brand-mark" src="/src/img/logo/nestia.png" alt="Nestia">
+          <div>
+            <div class="marketing-brand-name">Nestia</div>
+            <div class="marketing-brand-tagline">La memoria de tu cocina.</div>
+          </div>
+        </a>
 
-      <div id="auth-login">
-        <div class="auth-title">Bienvenido</div>
-        <div class="auth-sub">Ingresá con tu cuenta para continuar</div>
-        <div class="auth-form">
-          <div><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com"></div>
-          <div><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
-          <div class="auth-error" id="login-error"></div>
-          <button class="btn primary" id="btn-login" onclick="doLogin()"><i class="ti ti-login"></i> Ingresar</button>
-          <div class="auth-divider">¿No tenés cuenta?</div>
-          <button class="btn" onclick="showAuthRegister()">Registrarse</button>
+        <nav class="marketing-nav">
+          <a href="#como-funciona">Cómo funciona</a>
+          <a href="#beneficios">Beneficios</a>
+          <a href="#valor">Qué cambia</a>
+        </nav>
+
+        <div class="marketing-actions">
+          <button class="btn ghost marketing-login-btn" type="button" onclick="openAccess('login')"><i class="ti ti-login-2"></i> Ingresar</button>
+          <button class="btn primary marketing-signup-btn" type="button" onclick="openAccess('register')"><i class="ti ti-user-plus"></i> Crear cuenta</button>
+        </div>
+
+        <div class="public-menu">
+          <button class="marketing-menu-btn" type="button" onclick="togglePublicMenu(event)" aria-label="Abrir menú">
+            <i class="ti ti-menu-2"></i>
+          </button>
+          <div class="public-menu-panel" id="public-menu-panel">
+            <a href="#como-funciona" onclick="closePublicMenu()">Cómo funciona</a>
+            <a href="#beneficios" onclick="closePublicMenu()">Beneficios</a>
+            <a href="#valor" onclick="closePublicMenu()">Qué cambia</a>
+            <button class="btn ghost" type="button" onclick="openAccess('login')"><i class="ti ti-login-2"></i> Ingresar</button>
+            <button class="btn primary" type="button" onclick="openAccess('register')"><i class="ti ti-user-plus"></i> Crear cuenta</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="marketing-main">
+      <section class="marketing-hero-section" id="home">
+        <div class="marketing-hero-copy">
+          <div class="marketing-kicker">Nestia para el hogar</div>
+          <h1 class="marketing-hero-title">Sabe qué hay en tu cocina, qué se vence primero y qué hace falta comprar.</h1>
+          <p class="marketing-hero-text">Nestia convierte el caos de la despensa en una memoria compartida. Menos desperdicio, más control y mejores hábitos para toda la familia.</p>
+          <div class="marketing-hero-actions">
+            <button class="btn primary" type="button" onclick="openAccess('register')"><i class="ti ti-user-plus"></i> Empezar gratis</button>
+            <button class="btn secondary" type="button" onclick="openAccess('login')"><i class="ti ti-login-2"></i> Ya tengo cuenta</button>
+          </div>
+          <div class="marketing-hero-proof">
+            <div class="marketing-proof-chip"><i class="ti ti-leaf"></i><span>Menos desperdicio</span></div>
+            <div class="marketing-proof-chip"><i class="ti ti-home-heart"></i><span>Hogar sincronizado</span></div>
+            <div class="marketing-proof-chip"><i class="ti ti-clock-hour-4"></i><span>Vencimientos claros</span></div>
+          </div>
+        </div>
+
+        <div class="marketing-hero-visual">
+          <div class="marketing-device">
+            <div class="marketing-device-header">
+              <div>
+                <div class="marketing-device-title">Inventario vivo</div>
+                <div class="marketing-device-sub">Tu cocina, ordenada por prioridad.</div>
+              </div>
+              <div class="marketing-device-pill">Nestia</div>
+            </div>
+            <div class="marketing-device-card danger">
+              <div class="marketing-device-card-top">
+                <span>Obleas Big</span>
+                <strong>×15</strong>
+              </div>
+              <div class="marketing-device-card-meta">4 lotes · uno vencido · otro vence hoy</div>
+            </div>
+            <div class="marketing-device-card warning">
+              <div class="marketing-device-card-top">
+                <span>Yogur natural</span>
+                <strong>×6</strong>
+              </div>
+              <div class="marketing-device-card-meta">Vence mañana · listo para consumir primero</div>
+            </div>
+            <div class="marketing-device-card success">
+              <div class="marketing-device-card-top">
+                <span>Arroz integral</span>
+                <strong>×3</strong>
+              </div>
+              <div class="marketing-device-card-meta">Stock estable · hogar al día</div>
+            </div>
+            <div class="marketing-mini-panel">
+              <div>
+                <div class="marketing-mini-label">Qué resuelve</div>
+                <div class="marketing-mini-value">Recordar, compartir y cocinar mejor</div>
+              </div>
+              <i class="ti ti-sparkles"></i>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="marketing-section" id="beneficios">
+        <div class="marketing-section-head">
+          <div class="marketing-kicker">Beneficios</div>
+          <h2 class="marketing-section-title">La cocina deja de depender de la memoria de una sola persona.</h2>
+        </div>
+        <div class="marketing-benefits-grid">
+          <article class="marketing-benefit-card">
+            <i class="ti ti-leaf"></i>
+            <h3>Menos desperdicio</h3>
+            <p>Sabes qué consumir primero antes de que se venza y aprovechas mejor cada compra.</p>
+          </article>
+          <article class="marketing-benefit-card">
+            <i class="ti ti-package"></i>
+            <h3>Stock claro</h3>
+            <p>Ves cuántas unidades quedan, por lote, sin abrir la heladera ni revisar toda la alacena.</p>
+          </article>
+          <article class="marketing-benefit-card">
+            <i class="ti ti-users"></i>
+            <h3>Memoria compartida</h3>
+            <p>Todo el hogar accede a la misma información y evita compras duplicadas o faltantes.</p>
+          </article>
+          <article class="marketing-benefit-card">
+            <i class="ti ti-brain"></i>
+            <h3>Hábitos más simples</h3>
+            <p>Nestia te ordena sin fricción: agregar, descontar y seguir vencimientos se vuelve natural.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="marketing-section marketing-flow-section" id="como-funciona">
+        <div class="marketing-section-head">
+          <div class="marketing-kicker">Cómo funciona</div>
+          <h2 class="marketing-section-title">Un flujo pensado para la vida real, no para administrar planillas.</h2>
+        </div>
+        <div class="marketing-steps">
+          <article class="marketing-step-card">
+            <div class="marketing-step-number">01</div>
+            <h3>Agrega lo que entra a casa</h3>
+            <p>Carga productos rápido desde el scanner o manualmente, con cantidad y vencimiento.</p>
+          </article>
+          <article class="marketing-step-card">
+            <div class="marketing-step-number">02</div>
+            <h3>Ve qué lote va primero</h3>
+            <p>El inventario prioriza lo urgente para que no tengas que decidir a ojo qué consumir.</p>
+          </article>
+          <article class="marketing-step-card">
+            <div class="marketing-step-number">03</div>
+            <h3>Descuenta stock sin fricción</h3>
+            <p>Cuando usas algo, actualizas por lote y Nestia mantiene el hogar sincronizado.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="marketing-section marketing-family-section" id="valor">
+        <div class="marketing-family-copy">
+          <div class="marketing-kicker">Qué cambia</div>
+          <h2 class="marketing-section-title">Nestia baja fricción todos los días, no solo cuando vas a comprar.</h2>
+          <p class="marketing-family-text">El valor no está en cargar productos. Está en dejar de dudar qué hay, qué falta y qué conviene consumir primero. La cocina se vuelve más clara, más compartida y menos dependiente de la memoria.</p>
+          <ul class="marketing-family-list">
+            <li><i class="ti ti-check"></i><span>Sabes qué lote usar primero sin revisar todo.</span></li>
+            <li><i class="ti ti-check"></i><span>Compras con mejor contexto y menos faltantes absurdos.</span></li>
+            <li><i class="ti ti-check"></i><span>Todo el hogar parte de la misma información.</span></li>
+          </ul>
+        </div>
+        <div class="marketing-family-panel">
+          <div class="marketing-family-quote">“La cocina deja de ser una caja negra.”</div>
+          <div class="marketing-family-stack">
+            <div class="marketing-stack-card">
+              <span>Antes</span>
+              <strong>No sé si queda, ni cuánto.</strong>
+            </div>
+            <div class="marketing-stack-card">
+              <span>Con Nestia</span>
+              <strong>Ves stock, vencimientos y prioridad real.</strong>
+            </div>
+            <div class="marketing-stack-card">
+              <span>Resultado</span>
+              <strong>Menos caos mental y mejores decisiones.</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="marketing-section marketing-cta-section">
+        <div class="marketing-cta-box">
+          <div>
+            <div class="marketing-kicker">Empezar</div>
+            <h2 class="marketing-section-title">Haz que tu cocina deje de depender de la memoria.</h2>
+            <p class="marketing-family-text">Empieza hoy con Nestia y convierte tu despensa en un sistema simple, humano y compartido.</p>
+          </div>
+          <div class="marketing-cta-actions">
+            <button class="btn primary" type="button" onclick="openAccess('register')"><i class="ti ti-user-plus"></i> Crear cuenta</button>
+            <button class="btn secondary" type="button" onclick="openAccess('login')"><i class="ti ti-login-2"></i> Ingresar</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="auth-screen" id="auth-screen" onclick="closeAccess(event)">
+    <div class="auth-box">
+      <div class="auth-hero">
+        <div class="auth-logo">
+          <img class="brand-mark auth-brand-mark" src="/src/img/logo/nestia.png" alt="Nestia">
+          <div>
+            <div class="auth-logo-text">Nestia</div>
+            <div class="brand-tagline">La memoria de tu cocina.</div>
+          </div>
+        </div>
+        <div class="auth-hero-copy">
+          <div class="auth-hero-kicker">Onboarding</div>
+          <h1 class="auth-hero-title">Organizá tu cocina sin fricción desde el primer día.</h1>
+          <p class="auth-hero-text">Nestia te ayuda a recordar qué hay en tu casa, qué se vence primero y cómo compartir esa memoria con tu hogar.</p>
+        </div>
+        <div class="auth-hero-points">
+          <div class="auth-hero-point"><i class="ti ti-leaf"></i><span>Menos desperdicio, más claridad.</span></div>
+          <div class="auth-hero-point"><i class="ti ti-home-heart"></i><span>Todo sincronizado con tu hogar.</span></div>
+          <div class="auth-hero-point"><i class="ti ti-brain"></i><span>Una experiencia simple y humana.</span></div>
         </div>
       </div>
 
-      <div id="auth-register" style="display:none">
-        <div class="auth-title">Crear cuenta</div>
-        <div class="auth-sub">Guardá tu alacena y compartila con tu hogar</div>
-        <div class="auth-form">
-          <div><label>Nombre</label><input type="text" id="reg-nombre" placeholder="Tu nombre"></div>
-          <div><label>Email</label><input type="email" id="reg-email" placeholder="tu@email.com"></div>
-          <div><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"></div>
-          <div class="auth-error" id="reg-error"></div>
-          <button class="btn primary" onclick="doRegister()"><i class="ti ti-user-plus"></i> Registrarse</button>
-          <div class="auth-divider">¿Ya tenés cuenta?</div>
-          <button class="btn" onclick="showAuthLogin()">Ingresar</button>
+      <div class="auth-flow">
+        <button class="auth-close-btn" type="button" onclick="closeAccess()" aria-label="Cerrar acceso">
+          <i class="ti ti-x"></i>
+        </button>
+        <div class="auth-mobile-brand">
+          <img class="brand-mark auth-mobile-brand-mark" src="/src/img/logo/nestia.png" alt="Nestia">
+          <div>
+            <div class="auth-mobile-brand-name">Nestia</div>
+            <div class="auth-mobile-brand-tagline">La memoria de tu cocina.</div>
+          </div>
+        </div>
+        <div class="auth-switcher">
+          <button class="auth-switch active" id="switch-login" onclick="showAuthLogin()">Ingresar</button>
+          <button class="auth-switch" id="switch-register" onclick="showAuthRegister()">Crear cuenta</button>
+        </div>
+
+        <div class="auth-step active" id="step-login">
+          <div class="auth-title">Bienvenido de nuevo</div>
+          <div class="auth-sub">Entra rápido a tu cocina con tu email y contraseña.</div>
+          <form class="auth-form" onsubmit="doLogin(); return false;">
+            <div><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com" enterkeyhint="next"></div>
+            <div><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" enterkeyhint="go"></div>
+            <div class="auth-error" id="login-error"></div>
+            <button class="btn primary" id="btn-login" type="submit"><i class="ti ti-arrow-right"></i> Ingresar</button>
+            <div class="auth-divider">o si prefieres</div>
+            <button class="btn secondary auth-social-btn" id="btn-google-login" type="button" onclick="doGoogleAuth('login')"><i class="ti ti-brand-google-filled"></i> Continuar con Google</button>
+          </form>
+        </div>
+
+        <div class="auth-step" id="step-register">
+          <div class="auth-step-meta">Paso 1 de 3</div>
+          <div class="auth-title">Crea tu acceso</div>
+          <div class="auth-sub">Empieza con tu email. Si está libre, sigues con tu contraseña.</div>
+          <form class="auth-form" onsubmit="doRegister(); return false;">
+            <div><label>Email</label><input type="email" id="signup-email" placeholder="tu@email.com" enterkeyhint="next"></div>
+            <div class="auth-error" id="signup-error"></div>
+            <button class="btn primary" id="btn-signup-continue" type="button" onclick="continueRegisterWithEmail()"><i class="ti ti-arrow-right"></i> Continuar</button>
+            <div class="auth-register-password-stage" id="signup-password-stage">
+              <div><label>Contraseña</label><input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres" enterkeyhint="go"></div>
+              <button class="btn primary" id="btn-signup" type="submit"><i class="ti ti-arrow-right"></i> Crear cuenta</button>
+              <button class="btn ghost auth-inline-link" type="button" onclick="editRegisterEmail()">Usar otro email</button>
+            </div>
+            <div class="auth-divider">o si prefieres</div>
+            <button class="btn secondary auth-social-btn" id="btn-google-register" type="button" onclick="doGoogleAuth('register')"><i class="ti ti-brand-google-filled"></i> Continuar con Google</button>
+          </form>
+        </div>
+
+        <div class="auth-step" id="step-profile-name">
+          <div class="auth-step-meta">Paso 2 de 3</div>
+          <div class="auth-title">¿Cómo quieres que te llame Nestia?</div>
+          <div class="auth-sub">Este nombre se usa dentro del hogar para que la experiencia sea más cercana.</div>
+          <form class="auth-form" onsubmit="saveProfileName(); return false;">
+            <div><label>Nombre</label><input type="text" id="profile-name" placeholder="Tu nombre" enterkeyhint="go"></div>
+            <div class="auth-error" id="profile-error"></div>
+            <button class="btn primary" id="btn-profile-name" type="submit"><i class="ti ti-check"></i> Continuar</button>
+          </form>
         </div>
       </div>
     </div>
@@ -57,38 +299,64 @@
 
   <div class="hogar-screen" id="hogar-screen">
     <div class="hogar-box">
-      <div class="auth-logo">
-        <div class="auth-logo-icon"><i class="ti ti-home-heart"></i></div>
-        <div class="auth-logo-text">mi<span>hogar</span></div>
-      </div>
-      <div class="auth-title">Elegí cómo continuar</div>
-      <div class="auth-sub">Podés crear un hogar nuevo o sumarte al de otra persona.</div>
-
-      <div class="hogar-options">
-        <div class="hogar-option" onclick="showCrearHogar()">
-          <div class="hogar-option-icon"><i class="ti ti-home-plus"></i></div>
-          <div class="hogar-option-title">Crear un hogar</div>
-          <div class="hogar-option-desc">Obtenés un código para invitar a otras personas.</div>
+      <div class="auth-hero">
+        <div class="auth-logo">
+          <img class="brand-mark auth-brand-mark" src="/src/img/logo/nestia.png" alt="Nestia">
+          <div>
+            <div class="auth-logo-text">Nestia</div>
+            <div class="brand-tagline">Tu hogar, en sincronía.</div>
+          </div>
         </div>
-        <div class="hogar-option" onclick="showUnirseHogar()">
-          <div class="hogar-option-icon"><i class="ti ti-door-enter"></i></div>
-          <div class="hogar-option-title">Unirme a un hogar</div>
-          <div class="hogar-option-desc">Ingresá un código compartido por otra persona.</div>
+        <div class="auth-hero-copy">
+          <div class="auth-hero-kicker">Paso final</div>
+          <h2 class="auth-hero-title">Ahora conectemos tu cocina con tu hogar.</h2>
+          <p class="auth-hero-text">Puedes crear un hogar nuevo o unirte a uno existente. Después de esto, entras directo a Nestia.</p>
         </div>
       </div>
 
-      <div class="hogar-form" id="crear-hogar-form" style="display:none">
-        <div><label>Nombre del hogar</label><input type="text" id="hogar-nombre" placeholder="Ej. Casa de Diego"></div>
-        <div class="auth-error" id="crear-error"></div>
-        <button class="btn primary" onclick="doCrearHogar()"><i class="ti ti-check"></i> Crear hogar</button>
-        <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
-      </div>
+      <div class="auth-flow">
+        <div class="home-step active" id="home-choice">
+          <div class="auth-step-meta">Paso final</div>
+          <div class="auth-title">Elegí cómo continuar</div>
+          <div class="auth-sub">Creá un hogar nuevo o sumate al de tu familia para compartir la cocina juntos.</div>
 
-      <div class="hogar-form" id="unirse-hogar-form" style="display:none">
-        <div><label>Código del hogar</label><input type="text" id="hogar-codigo" placeholder="abcd12"></div>
-        <div class="auth-error" id="unirse-error"></div>
-        <button class="btn primary" onclick="doUnirseHogar()"><i class="ti ti-door-enter"></i> Unirme</button>
-        <button class="btn ghost" onclick="hideHogarForms()">Cancelar</button>
+          <div class="hogar-options">
+            <div class="hogar-option" onclick="showCrearHogar()">
+              <div class="hogar-option-icon"><i class="ti ti-home-plus"></i></div>
+              <div class="hogar-option-title">Crear un hogar</div>
+              <div class="hogar-option-desc">Obtén un código para invitar a otras personas y empezar a organizar juntos.</div>
+            </div>
+            <div class="hogar-option" onclick="showUnirseHogar()">
+              <div class="hogar-option-icon"><i class="ti ti-door-enter"></i></div>
+              <div class="hogar-option-title">Unirme a un hogar</div>
+              <div class="hogar-option-desc">Ingresa un código compartido por otra persona y entra con todo sincronizado.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-step hogar-form" id="home-create">
+          <div class="auth-step-meta">Crear hogar</div>
+          <div class="auth-title">Ponle nombre a tu hogar</div>
+          <div class="auth-sub">Ese será el espacio compartido donde Nestia organizará los alimentos y las listas de tu cocina.</div>
+          <div class="auth-form">
+            <div><label>Nombre del hogar</label><input type="text" id="hogar-nombre" placeholder="Ej. Casa de Diego"></div>
+            <div class="auth-error" id="crear-error"></div>
+            <button class="btn primary" onclick="doCrearHogar()"><i class="ti ti-check"></i> Crear hogar</button>
+            <button class="btn ghost" onclick="hideHogarForms()">Volver</button>
+          </div>
+        </div>
+
+        <div class="home-step hogar-form" id="home-join">
+          <div class="auth-step-meta">Unirse a un hogar</div>
+          <div class="auth-title">Ingresa tu código de invitación</div>
+          <div class="auth-sub">Pega el código que te compartieron y Nestia te suma a ese hogar automáticamente.</div>
+          <div class="auth-form">
+            <div><label>Código del hogar</label><input type="text" id="hogar-codigo" placeholder="abcd12"></div>
+            <div class="auth-error" id="unirse-error"></div>
+            <button class="btn primary" onclick="doUnirseHogar()"><i class="ti ti-door-enter"></i> Unirme</button>
+            <button class="btn ghost" onclick="hideHogarForms()">Volver</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -97,36 +365,72 @@
     <header class="header">
       <div class="header-row">
         <div class="logo">
-          <div class="logo-icon"><i class="ti ti-box"></i></div>
-          <div class="logo-text">mi<span>alacena</span></div>
+          <img class="brand-mark header-brand-mark" src="/src/img/logo/nestia-logo-inverted.png" alt="Nestia">
+          <div>
+            <div class="logo-text">Nestia</div>
+            <div class="logo-sub">La memoria de tu cocina.</div>
+          </div>
         </div>
         <div class="header-right">
           <div class="sync-dot" id="sync-dot"></div>
-          <div class="header-avatar" id="header-avatar" onclick="doLogout()" title="Cerrar sesión">?</div>
+          <div class="user-menu">
+            <button class="header-avatar" id="header-avatar" onclick="toggleUserMenu(event)" title="Abrir menú">?</button>
+            <div class="user-menu-panel" id="user-menu-panel">
+              <div class="user-menu-meta">
+                <div class="user-menu-name" id="user-menu-name">—</div>
+                <div class="user-menu-email" id="user-menu-email">—</div>
+              </div>
+              <div class="user-menu-hogar">
+                <div class="user-menu-hogar-label">Hogar</div>
+                <div class="user-menu-hogar-name" id="user-menu-hogar">—</div>
+              </div>
+              <button class="user-menu-action" onclick="doLogout()">
+                <i class="ti ti-logout"></i>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="hogar-badge">Hogar</div>
       <div class="header-hogar-name" id="hogar-badge">—</div>
-      <div class="stats-float">
-        <div class="stat">
-          <div class="stat-num" id="stat-total">0</div>
-          <div class="stat-lbl">Unidades</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="stat-pronto">0</div>
-          <div class="stat-lbl">Por vencer</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="stat-vencido">0</div>
-          <div class="stat-lbl">Vencidos</div>
-        </div>
-      </div>
     </header>
+
+    <div class="app-shell">
+    <nav class="tabs">
+      <button class="tab active" id="tab-inventario" onclick="showPage('inventario')"><i class="ti ti-package"></i><span>Inventario</span><small>Despensa y stock</small><div class="tab-dot"></div></button>
+      <button class="tab" id="tab-scanner" onclick="showPage('scanner')"><i class="ti ti-barcode"></i><span>Escanear</span><small>Carga rápida</small><div class="tab-dot"></div></button>
+      <button class="tab" id="tab-manual" onclick="showPage('manual')"><i class="ti ti-plus"></i><span>Manual</span><small>Alta y edición</small><div class="tab-dot"></div></button>
+      <button class="tab" id="tab-ajustes" onclick="showPage('ajustes')"><i class="ti ti-settings"></i><span>Ajustes</span><small>Hogar y listas</small><div class="tab-dot"></div></button>
+    </nav>
 
     <main class="content">
       <div id="page-inventario" class="page active">
         <div class="section-header">
-          <div class="section-title">Inventario</div>
+          <div>
+            <div class="section-title">Inventario</div>
+            <h2 class="page-heading">Todo lo que hay en tu cocina, en un solo lugar.</h2>
+          </div>
+        </div>
+        <div class="inventory-stats">
+          <div class="stat">
+            <div class="stat-num" id="stat-total">0</div>
+            <div class="stat-lbl">Unidades</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="stat-pronto">0</div>
+            <div class="stat-lbl stat-lbl-info">
+              <span>Por vencer</span>
+              <button class="stat-info-trigger" type="button" aria-label="Más información sobre por vencer">
+                <i class="ti ti-info-circle"></i>
+              </button>
+              <span class="stat-tooltip">Incluye productos que vencen en los próximos 7 días.</span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="stat-vencido">0</div>
+            <div class="stat-lbl">Vencidos</div>
+          </div>
         </div>
         <div class="filters">
           <select id="filter-est" onchange="renderList()">
@@ -140,6 +444,43 @@
           </select>
         </div>
         <div class="product-list" id="product-list"></div>
+        <button class="filters-fab" id="filters-fab" type="button" onclick="openFilterSheet()">
+          <i class="ti ti-adjustments-horizontal"></i>
+          <span>Filtros</span>
+        </button>
+        <div class="filter-sheet-overlay" id="filter-sheet-overlay" onclick="closeFilterSheet(event)">
+          <div class="filter-sheet">
+            <div class="filter-sheet-handle"></div>
+            <div class="filter-sheet-header">
+              <div>
+                <div class="section-title">Filtros</div>
+                <div class="filter-sheet-title">Ajustá tu inventario</div>
+              </div>
+              <button class="modal-close" type="button" onclick="closeFilterSheet()"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="filter-sheet-body">
+              <div class="form-row">
+                <label>Estado</label>
+                <select id="mobile-filter-est">
+                  <option value="">Todos los estados</option>
+                  <option value="vencido">Vencidos</option>
+                  <option value="pronto">Por vencer</option>
+                  <option value="ok">OK</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Categoría</label>
+                <select id="mobile-filter-cat">
+                  <option value="">Todas las categorías</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-sheet-actions">
+              <button class="btn ghost" type="button" onclick="clearMobileFilters()">Limpiar</button>
+              <button class="btn primary" type="button" onclick="applyMobileFilters()"><i class="ti ti-check"></i> Aplicar filtros</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="page-scanner" class="page">
@@ -151,7 +492,7 @@
               <div class="auth-sub">Usá la cámara o cargalo manualmente.</div>
             </div>
             <button class="btn primary" onclick="startScan()"><i class="ti ti-camera"></i> Activar cámara</button>
-            <button class="btn" style="margin-top:8px" onclick="showManualInput()"><i class="ti ti-keyboard"></i> Ingresar código manualmente</button>
+            <button class="btn secondary" style="margin-top:8px" onclick="showManualInput()"><i class="ti ti-keyboard"></i> Ingresar código manualmente</button>
           </div>
         </div>
 
@@ -161,7 +502,7 @@
             <div id="video-wrap">
               <div id="scan-video"></div>
             </div>
-            <button class="btn" onclick="stopScan()"><i class="ti ti-player-stop"></i> Detener cámara</button>
+            <button class="btn secondary" onclick="stopScan()"><i class="ti ti-player-stop"></i> Detener cámara</button>
           </div>
         </div>
 
@@ -178,7 +519,7 @@
           <div class="status-card found">
             <div class="status-tag found"><i class="ti ti-check"></i> Producto existente</div>
             <div style="display:flex;align-items:center;gap:12px">
-              <img id="found-img" alt="" class="card-img" style="display:none">
+              <img id="found-img" alt="" class="card-img product-preview-img" style="display:none">
               <div>
                 <div class="status-name" id="found-name">—</div>
                 <div class="status-meta" id="found-meta"></div>
@@ -204,7 +545,7 @@
 
           <div class="form-card" id="off-preview" style="display:none">
             <div style="display:flex;align-items:center;gap:12px">
-              <img id="new-img" alt="" class="card-img">
+              <img id="new-img" alt="" class="card-img product-preview-img">
               <div>
                 <div class="status-name" id="off-product-name">—</div>
                 <div class="status-meta">Datos sugeridos por Open Food Facts</div>
@@ -214,6 +555,7 @@
 
           <div class="form-card">
             <div class="form-row"><label>Nombre</label><input type="text" id="new-nombre" placeholder="Ej. Fideos"></div>
+            <div class="auth-error" id="scan-new-error"></div>
             <div class="form-grid">
               <div><label>Categoría</label><select id="new-cat"></select></div>
               <div><label>Ubicación</label><select id="new-ubic"></select></div>
@@ -238,7 +580,7 @@
               <div class="autocomplete-list" id="ac-list"></div>
             </div>
             <div id="off-search-wrap" style="display:none;margin-top:10px">
-              <button class="btn" onclick="searchOFF()" id="btn-off-search"><i class="ti ti-world"></i> Buscar en Open Food Facts</button>
+              <button class="btn secondary" onclick="searchOFF()" id="btn-off-search"><i class="ti ti-world"></i> Buscar en Open Food Facts</button>
             </div>
             <button class="btn ghost" onclick="showManualBlank()"><i class="ti ti-pencil"></i> Cargar sin buscar</button>
           </div>
@@ -248,6 +590,7 @@
           <div class="form-card">
             <div class="form-card-title" id="manual-title">Nuevo producto</div>
             <div class="form-row"><label>Nombre</label><input type="text" id="m-nombre" placeholder="Ej. Yerba"></div>
+            <div class="auth-error" id="manual-error"></div>
             <div class="form-grid">
               <div><label>Categoría</label><select id="m-cat"></select></div>
               <div><label>Ubicación</label><select id="m-ubic"></select></div>
@@ -255,7 +598,7 @@
             <div class="form-row"><label>Código de barras</label><input type="text" id="m-barcode" placeholder="Opcional"></div>
             <div class="form-card" id="m-preview" style="display:none;padding:.875rem">
               <div style="display:flex;align-items:center;gap:12px">
-                <img id="m-preview-img" alt="" class="card-img">
+                <img id="m-preview-img" alt="" class="card-img product-preview-img">
                 <div>
                   <div class="status-name" id="m-preview-name">—</div>
                   <div class="status-meta" id="m-preview-source">—</div>
@@ -286,36 +629,34 @@
           <div class="form-card-title">Código del hogar</div>
           <div style="display:flex;align-items:center;gap:10px">
             <div class="settings-hogar-code" id="settings-codigo">—</div>
-            <button class="btn" style="width:auto;padding:8px 14px;flex-shrink:0" onclick="copiarCodigo()"><i class="ti ti-copy"></i> Copiar</button>
+            <button class="btn secondary btn-inline" onclick="copiarCodigo()"><i class="ti ti-copy"></i> Copiar</button>
           </div>
         </div>
 
-        <div class="form-card">
-          <div class="form-card-title">Categorías</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input type="text" id="new-cat-input" placeholder="Agregar categoría">
-            <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarCategoria()"><i class="ti ti-plus"></i></button>
+        <div class="settings-grid">
+          <div class="form-card">
+            <div class="form-card-title">Categorías</div>
+            <div class="inline-action">
+              <input type="text" id="new-cat-input" placeholder="Agregar categoría">
+              <button class="btn primary btn-square" onclick="agregarCategoria()"><i class="ti ti-plus"></i></button>
+            </div>
+            <div class="auth-error" id="settings-cat-error"></div>
+            <div id="settings-cats"></div>
           </div>
-          <div id="settings-cats"></div>
-        </div>
 
-        <div class="form-card">
-          <div class="form-card-title">Ubicaciones</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input type="text" id="new-ubic-input" placeholder="Agregar ubicación">
-            <button class="btn primary" style="width:auto;padding:9px 14px" onclick="agregarUbicacion()"><i class="ti ti-plus"></i></button>
+          <div class="form-card">
+            <div class="form-card-title">Ubicaciones</div>
+            <div class="inline-action">
+              <input type="text" id="new-ubic-input" placeholder="Agregar ubicación">
+              <button class="btn primary btn-square" onclick="agregarUbicacion()"><i class="ti ti-plus"></i></button>
+            </div>
+            <div class="auth-error" id="settings-ubic-error"></div>
+            <div id="settings-ubics"></div>
           </div>
-          <div id="settings-ubics"></div>
         </div>
       </div>
     </main>
-
-    <nav class="tabs">
-      <button class="tab active" id="tab-inventario" onclick="showPage('inventario')"><i class="ti ti-package"></i>Inventario<div class="tab-dot"></div></button>
-      <button class="tab" id="tab-scanner" onclick="showPage('scanner')"><i class="ti ti-barcode"></i>Escanear<div class="tab-dot"></div></button>
-      <button class="tab" id="tab-manual" onclick="showPage('manual')"><i class="ti ti-plus"></i>Manual<div class="tab-dot"></div></button>
-      <button class="tab" id="tab-ajustes" onclick="showPage('ajustes')"><i class="ti ti-settings"></i>Ajustes<div class="tab-dot"></div></button>
-    </nav>
+    </div>
   </div>
 
   <div class="modal-overlay" id="lote-modal" onclick="closeLoteModal(event)">
@@ -336,7 +677,6 @@
       </div>
       <div class="form-row"><label>Fecha de vencimiento</label><input type="date" id="lote-fecha"></div>
       <button class="btn primary" onclick="saveLote()"><i class="ti ti-check"></i> Guardar lote</button>
-      <button class="btn ghost" id="lote-delete-btn" onclick="deleteLote()" style="margin-top:8px;color:var(--red);display:none"><i class="ti ti-trash"></i> Eliminar este lote</button>
       <button class="btn ghost" onclick="closeLoteModal()" style="margin-top:8px">Cancelar</button>
     </div>
   </div>
@@ -348,9 +688,11 @@
         <div class="modal-title">Descontar stock</div>
         <button class="modal-close" onclick="closeConsumoModal()"><i class="ti ti-x"></i></button>
       </div>
-      <div id="consumo-product" style="display:flex;align-items:center;gap:12px;margin-bottom:1rem"></div>
-      <div id="consumo-lotes" style="display:flex;flex-direction:column;gap:8px"></div>
-      <button class="btn primary" onclick="confirmarConsumo()"><i class="ti ti-check"></i> Confirmar</button>
+      <div id="consumo-product" class="consumo-product-card"></div>
+      <div class="form-card-title" style="margin:0 0 12px">Lotes disponibles</div>
+      <div id="consumo-lotes" class="consumo-lotes-list"></div>
+      <div class="consumo-summary" id="consumo-summary">Selecciona cuánto consumiste de cada lote.</div>
+      <button class="btn primary" id="consumo-confirm-btn" onclick="confirmarConsumo()" disabled><i class="ti ti-check"></i> Confirmar descuento</button>
       <button class="btn ghost" onclick="closeConsumoModal()" style="margin-top:8px">Cancelar</button>
     </div>
   </div>
@@ -364,11 +706,12 @@
       </div>
       <div class="form-card" id="modal-preview" style="display:none;padding:.875rem">
         <div style="display:flex;align-items:center;gap:12px">
-          <img id="modal-preview-img" alt="" class="card-img">
+          <img id="modal-preview-img" alt="" class="card-img product-preview-img">
           <div class="status-name" id="modal-preview-name">—</div>
         </div>
       </div>
       <div class="form-row"><label>Nombre</label><input type="text" id="edit-nombre"></div>
+      <div class="auth-error" id="edit-error"></div>
       <div class="form-grid">
         <div><label>Categoría</label><select id="edit-cat"></select></div>
         <div><label>Ubicación</label><select id="edit-ubic"></select></div>
@@ -376,6 +719,18 @@
       <div class="form-row"><label>Código de barras</label><input type="text" id="edit-barcode"></div>
       <button class="btn primary" onclick="saveEdit()"><i class="ti ti-check"></i> Guardar cambios</button>
       <button class="btn ghost" onclick="closeEditModal()" style="margin-top:8px">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay confirm-modal-overlay" id="confirm-modal" onclick="closeConfirmModal(event)">
+    <div class="confirm-modal">
+      <div class="confirm-modal-icon"><i class="ti ti-alert-circle"></i></div>
+      <div class="confirm-modal-title" id="confirm-modal-title">Confirmar acción</div>
+      <div class="confirm-modal-message" id="confirm-modal-message">¿Quieres continuar?</div>
+      <div class="confirm-modal-actions">
+        <button class="btn danger" id="confirm-modal-button" onclick="confirmModalAction()">Confirmar</button>
+        <button class="btn ghost" type="button" onclick="closeConfirmModal()">Cancelar</button>
+      </div>
     </div>
   </div>
 

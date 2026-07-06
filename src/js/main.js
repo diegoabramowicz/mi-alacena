@@ -1,44 +1,75 @@
-import { init, doLogin, doLogout, doRegister, showAuthLogin, showAuthRegister } from "./modules/auth.js";
-import { closeConsumoModal, confirmarConsumo, openConsumoModal, stepConsumo } from "./modules/consumption.js";
+import {
+  closeAccess,
+  closePublicMenu,
+  continueRegisterWithEmail,
+  init,
+  doGoogleAuth,
+  doLogin,
+  doLogout,
+  doRegister,
+  editRegisterEmail,
+  openAccess,
+  saveProfileName,
+  showAuthLogin,
+  showAuthRegister,
+  togglePublicMenu,
+  toggleUserMenu,
+} from "./modules/auth.js";
+import { closeConsumoModal, confirmarConsumo, fillConsumo, openConsumoModal, stepConsumo } from "./modules/consumption.js";
 import { copiarCodigo, doCrearHogar, doUnirseHogar, hideHogarForms, showCrearHogar, showUnirseHogar } from "./modules/home.js";
 import { closeEditModal, editProducto, eliminarProducto, saveEdit } from "./modules/inventory.js";
-import { closeLoteModal, deleteLote, openLoteModal, saveLote } from "./modules/lots.js";
+import { closeLoteModal, openLoteModal, saveLote } from "./modules/lots.js";
 import { acBlur, acInput, acKeydown, acSelectProduct, resetManualForm, saveManual, searchOFF, showManualBlank } from "./modules/manual.js";
 import { showPage } from "./modules/navigation.js";
 import { changeQty } from "./modules/quantity.js";
-import { renderList } from "./modules/render.js";
+import { applyMobileFilters, clearMobileFilters, closeFilterSheet, closeProductMenus, openFilterSheet, renderList, toggleProductLotes, toggleProductMenu } from "./modules/render.js";
 import { lookupManual, saveFound, saveNew, setScanState, showManualInput, startScan, stopScan } from "./modules/scanner.js";
 import { agregarCategoria, agregarUbicacion, eliminarCategoria, eliminarUbicacion } from "./modules/settings.js";
+import { closeConfirmModal, confirmModalAction } from "./utils/ui.js";
 
 Object.assign(window, {
   acBlur,
   acInput,
   acKeydown,
   acSelectProduct,
+  applyMobileFilters,
   agregarCategoria,
   agregarUbicacion,
   changeQty,
+  closeAccess,
+  clearMobileFilters,
   closeConsumoModal,
+  closeConfirmModal,
   closeEditModal,
+  closeFilterSheet,
+  closeProductMenus,
+  closePublicMenu,
   closeLoteModal,
+  confirmModalAction,
   confirmarConsumo,
+  continueRegisterWithEmail,
   copiarCodigo,
-  deleteLote,
+  fillConsumo,
   doCrearHogar,
+  doGoogleAuth,
   doLogin,
   doLogout,
   doRegister,
   doUnirseHogar,
+  editRegisterEmail,
   editProducto,
   eliminarCategoria,
   eliminarProducto,
   eliminarUbicacion,
   hideHogarForms,
   lookupManual,
+  openAccess,
   openConsumoModal,
+  openFilterSheet,
   openLoteModal,
   renderList,
   resetManualForm,
+  saveProfileName,
   saveEdit,
   saveFound,
   saveLote,
@@ -56,6 +87,10 @@ Object.assign(window, {
   startScan,
   stepConsumo,
   stopScan,
+  toggleProductLotes,
+  toggleProductMenu,
+  togglePublicMenu,
+  toggleUserMenu,
 });
 
 init();
