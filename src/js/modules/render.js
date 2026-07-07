@@ -1,4 +1,5 @@
 import { state } from "../state.js";
+import { getInventoryChallengeState, isInventoryChallengeCompleted, renderInventoryActivationCard } from "./activation.js";
 import { diasLabel, estadoProducto, fmtF, getEstado, lotesDeProducto, totalCantidad } from "../utils/date.js";
 
 function lotesVisibles(productoId, estadoFiltro) {
@@ -194,6 +195,8 @@ export function renderList() {
   const list = document.getElementById("product-list");
   if (!list) return;
 
+  renderInventoryActivationCard();
+
   syncMobileFilterControls();
 
   const filterKey = getInventoryFilterKey(estado, categoria);
@@ -228,7 +231,10 @@ export function renderList() {
   document.getElementById("stat-vencido").textContent = state.productos.filter((producto) => estadoProducto(producto.id) === "vencido").length;
 
   if (!filtrados.length) {
-    list.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>${state.productos.length === 0 ? "Todavía no tenés productos.<br><small>Agregá uno desde Escanear o Manual.</small>" : "No hay productos con ese filtro."}</div>`;
+    const shouldHideEmpty = state.productos.length === 0 && !isInventoryChallengeCompleted() && getInventoryChallengeState() === "empty";
+    list.innerHTML = shouldHideEmpty
+      ? ""
+      : `<div class="empty"><i class="ti ti-package-off"></i>${state.productos.length === 0 ? "Todavía no tenés productos.<br><small>Agregá uno desde Escanear o Manual.</small>" : "No hay productos con ese filtro."}</div>`;
     return;
   }
 

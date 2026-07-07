@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { fetchOFF } from "../services/open-food-facts.js";
+import { handleInventoryProductAdded } from "./activation.js";
 import { agregarProductoNuevo } from "./data.js";
 import { renderList } from "./render.js";
 import { showPage } from "./navigation.js";
@@ -105,9 +106,9 @@ export async function saveNew() {
       document.getElementById("new-fecha").value,
     );
     renderList();
-    showToast("✓ Producto agregado");
     setScanState("idle");
     showPage("inventario");
+    await handleInventoryProductAdded();
   } catch {
     setInlineError("scan-new-error", "No pudimos guardar el producto.");
   }
@@ -153,13 +154,13 @@ export async function stopScan() {
   }
   state.scanning = false;
   document.getElementById("video-wrap").style.display = "none";
-}
-
-export function goIdleScan() {
-  stopScan();
   setScanState("idle");
   state.currentBC = "";
   state.currentFoundId = null;
   state.currentOFFImg = "";
   state.qtyScan = 1;
+}
+
+export function goIdleScan() {
+  stopScan();
 }

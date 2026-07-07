@@ -23,6 +23,7 @@ export const state = {
   expandedProductLotes: {},
   lastInventoryFilterKey: "",
   openProductMenuId: null,
+  activationModalAction: "",
 };
 
 export function resetSessionState() {
@@ -32,4 +33,5 @@ export function resetSessionState() {
   state.expandedProductLotes = {};
   state.lastInventoryFilterKey = "";
   state.openProductMenuId = null;
+  state.activationModalAction = "";
 }

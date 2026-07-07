@@ -1,4 +1,4 @@
-# Nestia
+# Nestra
 
 Aplicacion web para organizar la alimentacion del hogar: productos, lotes, vencimientos, consumo, carga manual y escaneo de codigo de barras.
 

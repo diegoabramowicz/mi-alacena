@@ -1,20 +1,20 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --blue:#5D7C5A;--blue-dark:#496247;--blue-light:#EEF3E8;--blue-mid:#8EA47E;
-  --indigo:#2D3436;--indigo-light:#F4F1EB;
-  --amber:#C89A36;--amber-light:#F7EBC5;
-  --green:#5D7C5A;--green-light:#ECF2E7;
-  --red:#C46A5B;--red-dark:#92483C;--red-light:#F8E8E3;
-  --bg:#FAF7F2;--surface:#FFFDFC;--bg-soft:#F4F0E7;
-  --border:#E6DED1;--border-mid:#C9BEAE;
-  --text-primary:#2D3436;--text-secondary:#5F645B;--text-tertiary:#8A8C84;
+  --blue:#5D7C5A;--blue-dark:#496247;--blue-light:#EEF3E8;--blue-mid:#A7B89A;
+  --indigo:#2D3436;--indigo-light:#F5F0E7;
+  --amber:#F4B860;--amber-light:#F9E9BE;
+  --green:#7FB069;--green-light:#EDF4E6;
+  --red:#D96B5F;--red-dark:#A65147;--red-light:#FAE8E3;
+  --bg:#FAF7F2;--surface:#FFFDFC;--bg-soft:#F3ECE1;
+  --border:#E9E0D4;--border-mid:#D8CCBD;
+  --text-primary:#2D3436;--text-secondary:#667066;--text-tertiary:#8E9087;
   --font-heading:"Manrope",sans-serif;--font-body:"Inter",sans-serif;--font-mono:"IBM Plex Mono",monospace;
   --radius-xs:8px;--radius-sm:12px;--radius-md:18px;--radius-lg:24px;--radius-xl:32px;
-  --shadow-sm:0 8px 24px rgba(93,124,90,.08),0 2px 8px rgba(45,52,54,.05);
-  --shadow-md:0 18px 40px rgba(93,124,90,.12),0 4px 16px rgba(45,52,54,.08);
-  --shadow-float:0 26px 60px rgba(93,124,90,.14),0 8px 24px rgba(45,52,54,.08);
+  --shadow-sm:0 10px 24px rgba(93,124,90,.08),0 2px 10px rgba(45,52,54,.05);
+  --shadow-md:0 18px 42px rgba(93,124,90,.11),0 4px 16px rgba(45,52,54,.07);
+  --shadow-float:0 28px 62px rgba(93,124,90,.12),0 8px 24px rgba(45,52,54,.08);
   --transition:.18s ease;
-  --gradient:linear-gradient(135deg,#5D7C5A 0%,#7B9470 100%);
+  --gradient:linear-gradient(135deg,#5D7C5A 0%,#7D9A72 100%);
 }
 html{
   background:var(--bg);
@@ -24,7 +24,7 @@ html{
 body{
   font-family:var(--font-body);
   background:
-    radial-gradient(circle at top left,rgba(255,255,255,.95) 0%,rgba(250,247,242,.9) 38%,rgba(245,239,228,.95) 100%);
+    radial-gradient(circle at top left,rgba(255,255,255,.96) 0%,rgba(250,247,242,.92) 34%,rgba(242,235,223,.98) 100%);
   color:var(--text-primary);
   min-height:100vh;
   -webkit-font-smoothing:antialiased
@@ -41,7 +41,7 @@ button,input,select{font:inherit}
 .app-shell{display:flex;gap:28px;align-items:flex-start;flex:1;padding:28px 0 120px}
 .header{
   margin-top:18px;
-  background:linear-gradient(180deg,rgba(93,124,90,.98) 0%,rgba(107,138,102,.95) 100%);
+  background:linear-gradient(180deg,rgba(93,124,90,.98) 0%,rgba(125,154,114,.95) 100%);
   padding:24px;
   border-radius:0 0 var(--radius-xl) var(--radius-xl);
   position:sticky;
@@ -180,6 +180,98 @@ button,input,select{font:inherit}
 }
 .section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;padding-top:6px}
 .section-title{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.8px}
+.activation-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:18px;
+  padding:22px 24px;
+  border-radius:var(--radius-lg);
+  background:linear-gradient(180deg,#fffefd 0%,#f8f3ea 100%);
+  border:1px solid rgba(93,124,90,.1);
+  box-shadow:var(--shadow-sm)
+}
+.activation-card-empty{
+  background:linear-gradient(135deg,rgba(93,124,90,.08) 0%,rgba(249,215,126,.16) 100%);
+}
+.activation-card-soft{
+  background:linear-gradient(180deg,#fffefd 0%,#f6f0e4 100%);
+}
+.activation-card-copy{flex:1;min-width:0}
+.activation-card-icon{
+  width:54px;
+  height:54px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(93,124,90,.12);
+  color:var(--blue-dark);
+  font-size:24px;
+  flex-shrink:0
+}
+.activation-card-kicker{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--blue);
+  margin-bottom:8px
+}
+.activation-card-title{
+  font-family:var(--font-heading);
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:-.7px;
+  color:var(--text-primary)
+}
+.activation-card-text{
+  margin-top:8px;
+  max-width:720px;
+  font-size:14px;
+  line-height:1.6;
+  color:var(--text-secondary)
+}
+.activation-card-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0
+}
+.activation-progress-block{
+  min-width:240px;
+  max-width:280px;
+  width:100%
+}
+.activation-progress-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:14px;
+  margin-bottom:8px;
+  font-size:13px;
+  color:var(--text-secondary)
+}
+.activation-progress-meta strong{
+  font-family:var(--font-mono);
+  font-size:14px;
+  color:var(--blue-dark)
+}
+.activation-progress-bar{
+  width:100%;
+  height:10px;
+  border-radius:999px;
+  background:rgba(93,124,90,.12);
+  overflow:hidden
+}
+.activation-progress-bar span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:var(--gradient)
+}
 .filters{display:flex;gap:10px;margin-bottom:18px}
 .filters select{
   flex:1;background:rgba(255,253,252,.9);border:1px solid var(--border);border-radius:var(--radius-sm);
@@ -380,9 +472,10 @@ button,input,select{font:inherit}
   position:sticky;
   top:0;
   z-index:40;
-  backdrop-filter:blur(16px);
-  background:rgba(250,247,242,.78);
-  border-bottom:1px solid rgba(93,124,90,.08)
+  backdrop-filter:blur(18px);
+  background:linear-gradient(180deg,rgba(255,253,249,.92) 0%,rgba(248,243,235,.88) 100%);
+  border-bottom:1px solid rgba(93,124,90,.10);
+  box-shadow:0 10px 28px rgba(93,124,90,.06)
 }
 .marketing-header-inner{
   width:min(1180px,calc(100% - 40px));
@@ -391,7 +484,7 @@ button,input,select{font:inherit}
   align-items:center;
   justify-content:space-between;
   gap:18px;
-  padding:16px 0
+  padding:14px 0
 }
 .marketing-brand{
   display:flex;
@@ -411,18 +504,42 @@ button,input,select{font:inherit}
 .marketing-brand-tagline{
   margin-top:3px;
   font-size:12px;
-  color:var(--blue)
+  color:var(--text-secondary)
 }
 .marketing-nav{display:flex;align-items:center;gap:28px}
 .marketing-nav a,.public-menu-panel a{
-  color:var(--text-secondary);
+  color:rgba(45,52,54,.72);
   text-decoration:none;
   font-size:14px;
   font-weight:600
 }
 .marketing-nav a:hover,.public-menu-panel a:hover{color:var(--blue-dark)}
 .marketing-actions{display:flex;align-items:center;gap:10px}
-.marketing-login-btn,.marketing-signup-btn{width:auto}
+.marketing-login-btn,.marketing-signup-btn{
+  width:auto;
+  min-width:156px;
+  justify-content:center
+}
+.marketing-actions .btn + .btn{margin-top:0}
+.marketing-actions .marketing-login-btn{
+  background:rgba(255,255,255,.74);
+  border-color:rgba(93,124,90,.12);
+  color:var(--text-primary);
+  box-shadow:0 8px 20px rgba(93,124,90,.05)
+}
+.marketing-actions .marketing-login-btn:hover{
+  border-color:rgba(93,124,90,.2);
+  box-shadow:0 12px 24px rgba(93,124,90,.08)
+}
+.marketing-actions .marketing-signup-btn{
+  background:linear-gradient(135deg,#5D7C5A 0%,#6C8A66 100%);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 16px 32px rgba(93,124,90,.18),0 0 0 1px rgba(255,255,255,.22) inset
+}
+.marketing-actions .marketing-signup-btn:hover{
+  box-shadow:0 20px 38px rgba(93,124,90,.22),0 0 0 1px rgba(255,255,255,.22) inset
+}
 .marketing-actions .btn i,
 .public-menu-panel .btn i,
 .marketing-hero-actions .btn i,
@@ -433,7 +550,7 @@ button,input,select{font:inherit}
 .marketing-cta-actions .btn{white-space:nowrap}
 .public-menu{display:none;position:relative}
 .marketing-menu-btn{
-  width:44px;height:44px;border-radius:14px;border:1px solid rgba(93,124,90,.14);background:#fff;color:var(--text-primary);
+  width:44px;height:44px;border-radius:14px;border:1px solid rgba(93,124,90,.12);background:rgba(255,255,255,.82);color:var(--text-primary);
   display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px
 }
 .public-menu-panel{
@@ -1054,6 +1171,12 @@ input:focus,select:focus{outline:none;border-color:rgba(93,124,90,.55);box-shado
   gap:10px;
   margin-top:22px
 }
+.activation-modal{border-color:rgba(93,124,90,.12)}
+.activation-modal-icon{
+  background:rgba(93,124,90,.12);
+  color:var(--blue-dark)
+}
+.activation-modal-actions .btn + .btn{margin-top:0}
 .consumo-product-card{
   display:flex;
   align-items:center;
@@ -1202,6 +1325,9 @@ input:focus,select:focus{outline:none;border-color:rgba(93,124,90,.55);box-shado
   .app-shell{gap:18px}
   .tabs{width:220px}
   .product-list{grid-template-columns:1fr}
+  .activation-card{flex-direction:column;align-items:flex-start}
+  .activation-card-actions{width:100%}
+  .activation-progress-block{max-width:none}
   .marketing-benefits-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .marketing-steps{grid-template-columns:1fr}
   .marketing-family-section{grid-template-columns:1fr}
@@ -1274,6 +1400,18 @@ input:focus,select:focus{outline:none;border-color:rgba(93,124,90,.55);box-shado
   .content{width:100%}
   .page{width:100%}
   .page-heading{font-size:24px;max-width:none}
+  .activation-card{
+    gap:16px;
+    padding:18px;
+    margin-bottom:16px
+  }
+  .activation-card-title{font-size:22px}
+  .activation-card-text{font-size:13px}
+  .activation-card-actions,.activation-card-actions .btn-inline{width:100%}
+  .activation-card-actions .btn-inline{
+    justify-content:center
+  }
+  .activation-progress-meta{margin-top:12px}
   .filters,.form-grid,.settings-grid,.hogar-options{grid-template-columns:1fr;display:grid}
   .filters{display:none}
   .filters-fab{position:fixed;right:16px;bottom:96px;z-index:11;display:inline-flex;align-items:center;gap:8px;border:none;border-radius:999px;padding:13px 16px;background:var(--gradient);color:#fff;font-weight:700;box-shadow:var(--shadow-float);cursor:pointer}

@@ -1,4 +1,10 @@
 import {
+  activationModalPrimaryAction,
+  activationModalSecondaryAction,
+  closeActivationModal,
+  getInventoryChallengeState,
+} from "./modules/activation.js";
+import {
   closeAccess,
   closePublicMenu,
   continueRegisterWithEmail,
@@ -16,7 +22,7 @@ import {
   toggleUserMenu,
 } from "./modules/auth.js";
 import { closeConsumoModal, confirmarConsumo, fillConsumo, openConsumoModal, stepConsumo } from "./modules/consumption.js";
-import { copiarCodigo, doCrearHogar, doUnirseHogar, hideHogarForms, showCrearHogar, showUnirseHogar } from "./modules/home.js";
+import { closeHomeOnboarding, copiarCodigo, doCrearHogar, doUnirseHogar, hideHogarForms, logoutFromHomeOnboarding, showCrearHogar, showUnirseHogar } from "./modules/home.js";
 import { closeEditModal, editProducto, eliminarProducto, saveEdit } from "./modules/inventory.js";
 import { closeLoteModal, openLoteModal, saveLote } from "./modules/lots.js";
 import { acBlur, acInput, acKeydown, acSelectProduct, resetManualForm, saveManual, searchOFF, showManualBlank } from "./modules/manual.js";
@@ -32,11 +38,15 @@ Object.assign(window, {
   acInput,
   acKeydown,
   acSelectProduct,
+  activationModalPrimaryAction,
+  activationModalSecondaryAction,
   applyMobileFilters,
   agregarCategoria,
   agregarUbicacion,
   changeQty,
+  closeActivationModal,
   closeAccess,
+  closeHomeOnboarding,
   clearMobileFilters,
   closeConsumoModal,
   closeConfirmModal,
@@ -50,6 +60,7 @@ Object.assign(window, {
   continueRegisterWithEmail,
   copiarCodigo,
   fillConsumo,
+  getInventoryChallengeState,
   doCrearHogar,
   doGoogleAuth,
   doLogin,
@@ -63,6 +74,7 @@ Object.assign(window, {
   eliminarUbicacion,
   hideHogarForms,
   lookupManual,
+  logoutFromHomeOnboarding,
   openAccess,
   openConsumoModal,
   openFilterSheet,

@@ -2,10 +2,11 @@ import { getAuthRedirectUrl } from "../config.js";
 import { state, resetSessionState } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { fetchData } from "./data.js";
+import { initializeInventoryChallenge } from "./activation.js";
 import { renderList } from "./render.js";
 import { clearInlineError, setLoading, setInlineError, showToast } from "../utils/ui.js";
 
-const AUTH_MODE_STORAGE_KEY = "nestia-auth-mode";
+const AUTH_MODE_STORAGE_KEY = "nestra-auth-mode";
 const GOOGLE_LOGIN_IDLE_HTML = '<i class="ti ti-brand-google-filled"></i> Continuar con Google';
 const GOOGLE_REGISTER_IDLE_HTML = '<i class="ti ti-brand-google-filled"></i> Continuar con Google';
 
@@ -538,6 +539,7 @@ export async function loadApp() {
   await fetchData();
   setLoading(false);
   renderList();
+  await initializeInventoryChallenge();
 }
 
 document.addEventListener("click", (event) => {

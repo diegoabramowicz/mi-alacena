@@ -1,6 +1,6 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
-import { loadApp } from "./auth.js";
+import { limpiarSesion, loadApp } from "./auth.js";
 import { clearInlineError, setInlineError, setLoading, showToast } from "../utils/ui.js";
 
 function setHomeStep(nextStep) {
@@ -39,6 +39,20 @@ export function showUnirseHogar() {
 export function hideHogarForms() {
   clearHomeErrors();
   setHomeStep("home-choice");
+}
+
+export function closeHomeOnboarding(event) {
+  const screen = document.getElementById("hogar-screen");
+  if (event && event.target !== screen) return;
+  screen?.classList.remove("active");
+  document.getElementById("auth-screen")?.classList.remove("active");
+  document.getElementById("main-app").style.display = "none";
+  document.getElementById("public-home")?.style.setProperty("display", "block");
+  setLoading(false);
+}
+
+export async function logoutFromHomeOnboarding() {
+  await limpiarSesion("login");
 }
 
 export async function doCrearHogar() {

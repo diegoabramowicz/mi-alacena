@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { fetchOFF } from "../services/open-food-facts.js";
+import { handleInventoryProductAdded } from "./activation.js";
 import { agregarProductoNuevo } from "./data.js";
 import { showPage } from "./navigation.js";
 import { renderList, renderSelects } from "./render.js";
@@ -97,6 +98,7 @@ export async function searchOFF() {
 export async function saveManual() {
   clearInlineError("manual-error");
   const nombre = document.getElementById("m-nombre").value.trim();
+  const wasEditing = !!state.editId;
   if (!nombre) {
     setInlineError("manual-error", "Ingresá el nombre del producto.");
     return;
@@ -143,12 +145,14 @@ export async function saveManual() {
         state.qtyManual,
         document.getElementById("m-fecha").value,
       );
-      showToast("✓ Producto guardado");
     }
 
     renderList();
     resetManualForm();
     showPage("inventario");
+    if (!wasEditing) {
+      await handleInventoryProductAdded();
+    }
   } catch {
     setInlineError("manual-error", "No pudimos guardar el producto.");
   }
