@@ -133,7 +133,10 @@ export async function startScan() {
           window.Html5QrcodeSupportedFormats.UPC_A,
         ],
       },
-      (decoded) => { stopScan(); lookupBarcode(decoded); },
+      async (decoded) => {
+        await stopScan({ resetView: false });
+        await lookupBarcode(decoded);
+      },
       () => {},
     );
   } catch (error) {
@@ -142,7 +145,8 @@ export async function startScan() {
   }
 }
 
-export async function stopScan() {
+export async function stopScan(options = {}) {
+  const { resetView = true } = options;
   if (state.scanner) {
     try {
       await state.scanner.stop();
@@ -154,13 +158,15 @@ export async function stopScan() {
   }
   state.scanning = false;
   document.getElementById("video-wrap").style.display = "none";
-  setScanState("idle");
-  state.currentBC = "";
-  state.currentFoundId = null;
-  state.currentOFFImg = "";
-  state.qtyScan = 1;
+  if (resetView) {
+    setScanState("idle");
+    state.currentBC = "";
+    state.currentFoundId = null;
+    state.currentOFFImg = "";
+    state.qtyScan = 1;
+  }
 }
 
 export function goIdleScan() {
-  stopScan();
+  stopScan({ resetView: true });
 }
