@@ -530,6 +530,7 @@ export async function init() {
 }
 
 export async function loadApp() {
+  window.scrollTo({ top: 0, behavior: "auto" });
   document.getElementById("public-home")?.style.setProperty("display", "none");
   document.getElementById("auth-screen").classList.remove("active");
   document.getElementById("hogar-screen").classList.remove("active");
