@@ -1335,6 +1335,9 @@ input:focus,select:focus{outline:none;border-color:rgba(93,124,90,.55);box-shado
 }
 
 @media (max-width: 820px){
+  input,select{
+    font-size:16px
+  }
   .app{padding:0;max-width:100%}
   .public-home{overflow:hidden}
   .marketing-header-inner{
