@@ -259,12 +259,20 @@ export async function doLogin() {
   }
 
   toggleButtonLoading("btn-login", true, "Ingresando...", '<i class="ti ti-arrow-right"></i> Ingresar');
+  setLoading(true, "Ingresando...");
   try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
+      setLoading(false);
       setAuthError("login-error", normalizeAuthError(error.message, "login"));
+      return;
+    }
+    if (data?.user) {
+      await handleSession(data.user);
+      return;
     }
   } catch {
+    setLoading(false);
     setAuthError("login-error", "Tuvimos un problema de conexión. Inténtalo de nuevo.");
   } finally {
     toggleButtonLoading("btn-login", false, "Ingresando...", '<i class="ti ti-arrow-right"></i> Ingresar');
@@ -507,9 +515,16 @@ export async function init() {
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === "SIGNED_IN") {
-      if (!state.currentUser || state.currentUser.id !== session?.user?.id) {
+      const appVisible = document.getElementById("main-app")?.style.display === "flex";
+      if (!state.currentUser || state.currentUser.id !== session?.user?.id || !appVisible) {
         await handleSession(session?.user ?? null);
       }
+      return;
+    }
+
+    if (event === "SIGNED_OUT") {
+      resetSessionState();
+      showPublicHome();
     }
   });
 }
