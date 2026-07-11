@@ -185,7 +185,7 @@ export async function syncInventoryChallengeCompletion({ showCelebration = false
 }
 
 export async function initializeInventoryChallenge() {
-  const completedNow = await syncInventoryChallengeCompletion({ showCelebration: true });
+  const completedNow = await syncInventoryChallengeCompletion({ showCelebration: false });
   if (completedNow) {
     renderList();
   }

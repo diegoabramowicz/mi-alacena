@@ -26,7 +26,7 @@ function getInventoryFilterKey(estado, categoria) {
 
 function getLotesRenderState(productoId, lotes) {
   const expanded = !!state.expandedProductLotes[productoId];
-  const hasMore = lotes.length > 0;
+  const hasMore = lotes.length > 1;
   return { expanded, hasMore };
 }
 

@@ -407,7 +407,7 @@ export async function limpiarSesion(mode = "login") {
   try {
     await sb.auth.signOut({ scope: "local" });
   } catch {}
-  state.currentUser = null;
+  resetSessionState();
   showPublicHome();
 }
 
@@ -552,8 +552,14 @@ export async function loadApp() {
   document.getElementById("settings-avatar").textContent = inicial;
 
   setLoading(true, "Cargando inventario...");
-  await fetchData();
+  const result = await fetchData();
   setLoading(false);
+  if (!result?.ok) {
+    if (result?.reason === "auth") {
+      await limpiarSesion("login");
+    }
+    return;
+  }
   renderList();
   await initializeInventoryChallenge();
 }

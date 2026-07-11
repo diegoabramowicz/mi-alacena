@@ -14,12 +14,19 @@ export function eliminarProducto(id) {
     confirmTone: "danger",
     onConfirm: async () => {
       setLoading(true, "Eliminando...");
-      await sb.from("productos").delete().eq("id", id);
-      state.productos = state.productos.filter((item) => item.id !== id);
-      state.lotes = state.lotes.filter((lote) => lote.producto_id !== id);
-      renderList();
-      setLoading(false);
-      showToast("Producto eliminado");
+      try {
+        const { error } = await sb.from("productos").delete().eq("id", id);
+        if (error) {
+          showToast("No pudimos eliminar el producto.", { type: "error" });
+          throw error;
+        }
+        state.productos = state.productos.filter((item) => item.id !== id);
+        state.lotes = state.lotes.filter((lote) => lote.producto_id !== id);
+        renderList();
+        showToast("Producto eliminado");
+      } finally {
+        setLoading(false);
+      }
     },
   });
 }

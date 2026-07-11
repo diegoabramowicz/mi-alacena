@@ -38,16 +38,24 @@ export async function saveLote() {
   btn.disabled = true;
   setLoading(true, "Guardando lote...");
 
-  const { data, error } = await sb.from("lotes").insert({
-    producto_id: state.loteModalProductoId,
-    cantidad: state.loteQty,
-    fecha_venc: fecha || null,
-  }).select().single();
-  if (!error && data) state.lotes.push(data);
+  try {
+    const { data, error } = await sb.from("lotes").insert({
+      producto_id: state.loteModalProductoId,
+      cantidad: state.loteQty,
+      fecha_venc: fecha || null,
+    }).select().single();
 
-  renderList();
-  showToast("✓ Lote guardado");
-  closeLoteModal();
-  setLoading(false);
-  btn.disabled = false;
+    if (error || !data) {
+      showToast("No pudimos guardar el lote.", { type: "error" });
+      return;
+    }
+
+    state.lotes.push(data);
+    renderList();
+    showToast("✓ Lote guardado");
+    closeLoteModal();
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
+  }
 }

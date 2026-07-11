@@ -71,19 +71,27 @@ export async function saveFound() {
   if (!producto) return;
 
   setLoading(true, "Guardando...");
-  const fecha = document.getElementById("found-fecha").value;
-  const { data: lote } = await sb.from("lotes").insert({
-    producto_id: producto.id,
-    cantidad: state.qtyScan,
-    fecha_venc: fecha || null,
-  }).select().single();
+  try {
+    const fecha = document.getElementById("found-fecha").value;
+    const { data: lote, error } = await sb.from("lotes").insert({
+      producto_id: producto.id,
+      cantidad: state.qtyScan,
+      fecha_venc: fecha || null,
+    }).select().single();
 
-  if (lote) state.lotes.push(lote);
-  renderList();
-  showToast("✓ Lote agregado");
-  setScanState("idle");
-  showPage("inventario");
-  setLoading(false);
+    if (error || !lote) {
+      showToast("No pudimos guardar el lote.", { type: "error" });
+      return;
+    }
+
+    state.lotes.push(lote);
+    renderList();
+    showToast("✓ Lote agregado");
+    setScanState("idle");
+    showPage("inventario");
+  } finally {
+    setLoading(false);
+  }
 }
 
 export async function saveNew() {

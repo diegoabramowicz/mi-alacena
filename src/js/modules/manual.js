@@ -110,12 +110,16 @@ export async function saveManual() {
 
   try {
     if (state.editId) {
-      await sb.from("productos").update({
+      const { error } = await sb.from("productos").update({
         nombre,
         categoria: document.getElementById("m-cat").value,
         ubicacion: document.getElementById("m-ubic").value,
         barcode: document.getElementById("m-barcode").value.trim(),
       }).eq("id", state.editId);
+
+      if (error) {
+        throw error;
+      }
 
       const producto = state.productos.find((item) => item.id === state.editId);
       if (producto) {

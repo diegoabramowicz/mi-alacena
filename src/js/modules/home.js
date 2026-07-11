@@ -44,6 +44,10 @@ export function hideHogarForms() {
 export function closeHomeOnboarding(event) {
   const screen = document.getElementById("hogar-screen");
   if (event && event.target !== screen) return;
+  if (state.currentUser && !state.currentHogar) {
+    logoutFromHomeOnboarding();
+    return;
+  }
   screen?.classList.remove("active");
   document.getElementById("auth-screen")?.classList.remove("active");
   document.getElementById("main-app").style.display = "none";

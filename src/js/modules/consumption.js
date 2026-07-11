@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { diasLabel, fmtF, getEstado, lotesDeProducto } from "../utils/date.js";
+import { fetchData } from "./data.js";
 import { renderList } from "./render.js";
 import { setLoading, showToast, toggleBodyScroll } from "../utils/ui.js";
 
@@ -124,24 +125,29 @@ export async function confirmarConsumo() {
   setLoading(true, "Guardando consumo...");
 
   let total = 0;
-  for (const [loteId, delta] of entradas) {
-    const lote = state.lotes.find((item) => item.id === loteId);
-    if (!lote) continue;
-    const nuevaCantidad = Math.max(0, lote.cantidad - delta);
-    total += delta;
+  try {
+    for (const [loteId, delta] of entradas) {
+      const lote = state.lotes.find((item) => item.id === loteId);
+      if (!lote) continue;
+      const nuevaCantidad = Math.max(0, lote.cantidad - delta);
+      total += delta;
 
-    if (nuevaCantidad === 0) {
-      await sb.from("lotes").delete().eq("id", loteId);
-      state.lotes = state.lotes.filter((item) => item.id !== loteId);
-    } else {
-      await sb.from("lotes").update({ cantidad: nuevaCantidad }).eq("id", loteId);
-      lote.cantidad = nuevaCantidad;
+      if (nuevaCantidad === 0) {
+        const { error } = await sb.from("lotes").delete().eq("id", loteId);
+        if (error) throw error;
+      } else {
+        const { error } = await sb.from("lotes").update({ cantidad: nuevaCantidad }).eq("id", loteId);
+        if (error) throw error;
+      }
     }
+    await fetchData();
+    renderList();
+    showToast(`−${total} consumidos`);
+    closeConsumoModal();
+  } catch {
+    setConsumoError("No pudimos guardar este descuento. Inténtalo de nuevo.");
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
   }
-
-  renderList();
-  showToast(`−${total} consumidos`);
-  closeConsumoModal();
-  setLoading(false);
-  btn.disabled = false;
 }

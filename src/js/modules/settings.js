@@ -14,8 +14,10 @@ export async function agregarCategoria() {
   }
 
   setLoading(true, "Guardando...");
-  const { data } = await sb.from("categorias").insert({ hogar_id: state.currentHogar.id, nombre }).select().single();
-  if (data) {
+  const { data, error } = await sb.from("categorias").insert({ hogar_id: state.currentHogar.id, nombre }).select().single();
+  if (error || !data) {
+    setInlineError("settings-cat-error", "No pudimos guardar la categoría.");
+  } else {
     state.categorias.push(data);
     renderSelects();
     input.value = "";
@@ -35,11 +37,18 @@ export function eliminarCategoria(id) {
     confirmTone: "danger",
     onConfirm: async () => {
       setLoading(true, "Eliminando...");
-      await sb.from("categorias").delete().eq("id", id);
-      state.categorias = state.categorias.filter((item) => item.id !== id);
-      renderSelects();
-      showToast("Categoría eliminada");
-      setLoading(false);
+      try {
+        const { error } = await sb.from("categorias").delete().eq("id", id);
+        if (error) {
+          showToast("No pudimos eliminar la categoría.", { type: "error" });
+          throw error;
+        }
+        state.categorias = state.categorias.filter((item) => item.id !== id);
+        renderSelects();
+        showToast("Categoría eliminada");
+      } finally {
+        setLoading(false);
+      }
     },
   });
 }
@@ -55,8 +64,10 @@ export async function agregarUbicacion() {
   }
 
   setLoading(true, "Guardando...");
-  const { data } = await sb.from("ubicaciones").insert({ hogar_id: state.currentHogar.id, nombre }).select().single();
-  if (data) {
+  const { data, error } = await sb.from("ubicaciones").insert({ hogar_id: state.currentHogar.id, nombre }).select().single();
+  if (error || !data) {
+    setInlineError("settings-ubic-error", "No pudimos guardar la ubicación.");
+  } else {
     state.ubicaciones.push(data);
     renderSelects();
     input.value = "";
@@ -76,11 +87,18 @@ export function eliminarUbicacion(id) {
     confirmTone: "danger",
     onConfirm: async () => {
       setLoading(true, "Eliminando...");
-      await sb.from("ubicaciones").delete().eq("id", id);
-      state.ubicaciones = state.ubicaciones.filter((item) => item.id !== id);
-      renderSelects();
-      showToast("Ubicación eliminada");
-      setLoading(false);
+      try {
+        const { error } = await sb.from("ubicaciones").delete().eq("id", id);
+        if (error) {
+          showToast("No pudimos eliminar la ubicación.", { type: "error" });
+          throw error;
+        }
+        state.ubicaciones = state.ubicaciones.filter((item) => item.id !== id);
+        renderSelects();
+        showToast("Ubicación eliminada");
+      } finally {
+        setLoading(false);
+      }
     },
   });
 }
