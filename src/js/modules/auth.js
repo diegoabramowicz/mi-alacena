@@ -3,6 +3,7 @@ import { state, resetSessionState } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { fetchData } from "./data.js";
 import { initializeInventoryChallenge } from "./activation.js";
+import { showPage } from "./navigation.js";
 import { renderList } from "./render.js";
 import { clearInlineError, setLoading, setInlineError, showToast } from "../utils/ui.js";
 
@@ -560,7 +561,7 @@ export async function loadApp() {
     }
     return;
   }
-  renderList();
+  showPage("inventario");
   await initializeInventoryChallenge();
 }
 

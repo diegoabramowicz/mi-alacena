@@ -30,6 +30,22 @@ body{
   -webkit-font-smoothing:antialiased
 }
 button,input,select{font:inherit}
+button,
+a,
+.tab,
+.qty-btn,
+.btn,
+.btn-add-lote,
+.btn-descontar,
+.icon-btn,
+.hogar-option,
+.auth-switch,
+.marketing-menu-btn,
+.header-avatar,
+.prod-menu-action,
+.lotes-toggle{
+  touch-action:manipulation
+}
 .app{
   width:min(1320px,100%);
   margin:0 auto;
