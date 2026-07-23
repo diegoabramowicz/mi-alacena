@@ -104,5 +104,7 @@ Object.assign(window, {
   togglePublicMenu,
   toggleUserMenu,
 });
+import { inject } from "@vercel/analytics";
+inject();
 
 init();
