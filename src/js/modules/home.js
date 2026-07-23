@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
+import { trackEvent } from "../services/analytics.js";
 import { limpiarSesion, loadApp } from "./auth.js";
 import { clearInlineError, setInlineError, setLoading, showToast } from "../utils/ui.js";
 
@@ -76,6 +77,7 @@ export async function doCrearHogar() {
     return;
   }
   state.currentHogar = data;
+  trackEvent("home_created", { origin: "onboarding" });
   await loadApp();
 }
 
@@ -96,6 +98,7 @@ export async function doUnirseHogar() {
     return;
   }
   state.currentHogar = data;
+  trackEvent("home_joined", { origin: "onboarding" });
   await loadApp();
 }
 

@@ -1,6 +1,7 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
 import { fetchOFF } from "../services/open-food-facts.js";
+import { trackEvent } from "../services/analytics.js";
 import { handleInventoryProductAdded } from "./activation.js";
 import { agregarProductoNuevo } from "./data.js";
 import { showPage } from "./navigation.js";
@@ -136,7 +137,10 @@ export async function saveManual() {
           cantidad: state.qtyManual,
           fecha_venc: fecha || null,
         }).select().single();
-        if (lote) state.lotes.push(lote);
+        if (lote) {
+          state.lotes.push(lote);
+          trackEvent("lot_added", { source: "manual_existing", quantity: state.qtyManual, has_expiry: Boolean(fecha) });
+        }
       }
       showToast("✓ Producto actualizado");
     } else {
@@ -149,6 +153,19 @@ export async function saveManual() {
         state.qtyManual,
         document.getElementById("m-fecha").value,
       );
+      if (state.qtyManual > 0) {
+        trackEvent("lot_added", {
+          source: "manual",
+          quantity: state.qtyManual,
+          has_expiry: Boolean(document.getElementById("m-fecha").value),
+        });
+      }
+      trackEvent("product_created", {
+        source: "manual",
+        quantity: state.qtyManual,
+        has_expiry: Boolean(document.getElementById("m-fecha").value),
+        has_barcode: Boolean(document.getElementById("m-barcode").value.trim()),
+      });
     }
 
     renderList();

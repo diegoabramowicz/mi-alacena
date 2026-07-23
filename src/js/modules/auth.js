@@ -4,10 +4,12 @@ import { sb } from "../services/supabase.js";
 import { fetchData } from "./data.js";
 import { initializeInventoryChallenge } from "./activation.js";
 import { showPage } from "./navigation.js";
+import { resetAnalyticsSession, trackEvent } from "../services/analytics.js";
 import { renderList } from "./render.js";
 import { clearInlineError, setLoading, setInlineError, showToast } from "../utils/ui.js";
 
 const AUTH_MODE_STORAGE_KEY = "nestra-auth-mode";
+const AUTH_INTENT_STORAGE_KEY = "nestra-auth-intent";
 const GOOGLE_LOGIN_IDLE_HTML = '<i class="ti ti-brand-google-filled"></i> Continuar con Google';
 const GOOGLE_REGISTER_IDLE_HTML = '<i class="ti ti-brand-google-filled"></i> Continuar con Google';
 
@@ -58,6 +60,40 @@ function getStoredAuthMode() {
     return window.sessionStorage.getItem(AUTH_MODE_STORAGE_KEY) === "register" ? "register" : "login";
   } catch {
     return "login";
+  }
+}
+
+function setAuthIntent(intent) {
+  try {
+    if (!intent) {
+      window.sessionStorage.removeItem(AUTH_INTENT_STORAGE_KEY);
+      return;
+    }
+    window.sessionStorage.setItem(AUTH_INTENT_STORAGE_KEY, intent);
+  } catch {}
+}
+
+function consumeAuthIntent() {
+  try {
+    const intent = window.sessionStorage.getItem(AUTH_INTENT_STORAGE_KEY) || "";
+    window.sessionStorage.removeItem(AUTH_INTENT_STORAGE_KEY);
+    return intent;
+  } catch {
+    return "";
+  }
+}
+
+function trackCompletedAuth(user) {
+  const intent = consumeAuthIntent();
+  if (!intent || !user?.id) return;
+
+  const [kind, provider] = intent.split(":");
+  if (kind === "login") {
+    trackEvent("login_completed", { provider });
+    return;
+  }
+  if (kind === "signup") {
+    trackEvent("signup_completed", { provider });
   }
 }
 
@@ -187,6 +223,7 @@ export function showAuthLogin() {
   clearAuthError("login-error", "signup-error", "profile-error");
   activateAuthSwitch("login");
   setAuthStep("step-login");
+  trackEvent("auth_login_opened");
 }
 
 export function showAuthRegister() {
@@ -196,6 +233,7 @@ export function showAuthRegister() {
   document.getElementById("signup-pass").value = "";
   activateAuthSwitch("register");
   setAuthStep("step-register");
+  trackEvent("auth_signup_opened");
 }
 
 export function continueRegisterWithEmail() {
@@ -261,18 +299,22 @@ export async function doLogin() {
 
   toggleButtonLoading("btn-login", true, "Ingresando...", '<i class="ti ti-arrow-right"></i> Ingresar');
   setLoading(true, "Ingresando...");
+  setAuthIntent("login:password");
   try {
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
+      setAuthIntent("");
       setLoading(false);
       setAuthError("login-error", normalizeAuthError(error.message, "login"));
       return;
     }
     if (data?.user) {
+      trackCompletedAuth(data.user);
       await handleSession(data.user);
       return;
     }
   } catch {
+    setAuthIntent("");
     setLoading(false);
     setAuthError("login-error", "Tuvimos un problema de conexión. Inténtalo de nuevo.");
   } finally {
@@ -282,6 +324,7 @@ export async function doLogin() {
 
 export async function doGoogleAuth(mode = "login") {
   setStoredAuthMode(mode);
+  setAuthIntent(`${mode === "register" ? "signup" : "login"}:google`);
   clearAuthError("login-error", "signup-error", "profile-error");
   toggleOAuthButtonsLoading(true);
 
@@ -297,10 +340,12 @@ export async function doGoogleAuth(mode = "login") {
     });
 
     if (error) {
+      setAuthIntent("");
       toggleOAuthButtonsLoading(false);
       setAuthError(mode === "register" ? "signup-error" : "login-error", normalizeOAuthError(error.message));
     }
   } catch {
+    setAuthIntent("");
     toggleOAuthButtonsLoading(false);
     setAuthError(mode === "register" ? "signup-error" : "login-error", "No pudimos abrir Google en este momento.");
   }
@@ -326,9 +371,11 @@ export async function doRegister() {
   }
 
   toggleButtonLoading("btn-signup", true, "Creando cuenta...", '<i class="ti ti-arrow-right"></i> Crear cuenta');
+  setAuthIntent("signup:password");
   try {
     const { error } = await sb.auth.signUp({ email, password: pass });
     if (error) {
+      setAuthIntent("");
       if ((error.message || "").toLowerCase().includes("already registered")) {
         setRegisterPasswordStage(false);
         document.getElementById("signup-pass").value = "";
@@ -338,10 +385,12 @@ export async function doRegister() {
       return;
     }
     showToast("Cuenta creada. Sigamos con tu perfil.");
+    trackCompletedAuth({ id: email });
     document.getElementById("profile-name").value = "";
     activateAuthSwitch("register");
     setAuthStep("step-profile-name");
   } catch {
+    setAuthIntent("");
     setAuthError("signup-error", "Tuvimos un problema al crear tu cuenta.");
   } finally {
     toggleButtonLoading("btn-signup", false, "Creando cuenta...", '<i class="ti ti-arrow-right"></i> Crear cuenta');
@@ -408,6 +457,8 @@ export async function limpiarSesion(mode = "login") {
   try {
     await sb.auth.signOut({ scope: "local" });
   } catch {}
+  setAuthIntent("");
+  resetAnalyticsSession();
   resetSessionState();
   showPublicHome();
 }
@@ -496,6 +547,7 @@ export async function init() {
     state.appInitialized = true;
 
     if (session?.user) {
+      trackCompletedAuth(session.user);
       await handleSession(session.user);
       return;
     }
@@ -516,6 +568,7 @@ export async function init() {
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === "SIGNED_IN") {
+      trackCompletedAuth(session?.user);
       const appVisible = document.getElementById("main-app")?.style.display === "flex";
       if (!state.currentUser || state.currentUser.id !== session?.user?.id || !appVisible) {
         await handleSession(session?.user ?? null);

@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
+import { trackEvent } from "../services/analytics.js";
 import { fetchOFF } from "../services/open-food-facts.js";
 import { handleInventoryProductAdded } from "./activation.js";
 import { agregarProductoNuevo } from "./data.js";
@@ -85,6 +86,8 @@ export async function saveFound() {
     }
 
     state.lotes.push(lote);
+    trackEvent("lot_added", { source: "scanner_existing", quantity: state.qtyScan, has_expiry: Boolean(fecha) });
+    trackEvent("scanner_success", { match_type: "existing" });
     renderList();
     showToast("✓ Lote agregado");
     setScanState("idle");
@@ -113,6 +116,23 @@ export async function saveNew() {
       state.qtyScan,
       document.getElementById("new-fecha").value,
     );
+    if (state.qtyScan > 0) {
+      trackEvent("lot_added", {
+        source: "scanner",
+        quantity: state.qtyScan,
+        has_expiry: Boolean(document.getElementById("new-fecha").value),
+      });
+    }
+    trackEvent("product_created", {
+      source: "scanner",
+      quantity: state.qtyScan,
+      has_expiry: Boolean(document.getElementById("new-fecha").value),
+      has_off_data: Boolean(state.currentOFFImg),
+    });
+    trackEvent("scanner_success", {
+      match_type: "new",
+      has_off_data: Boolean(state.currentOFFImg),
+    });
     renderList();
     setScanState("idle");
     showPage("inventario");
@@ -126,6 +146,7 @@ export async function saveNew() {
 export async function startScan() {
   setScanState("scanning");
   document.getElementById("video-wrap").style.display = "block";
+  trackEvent("scanner_started", { entry: "camera" });
   try {
     state.scanner = new window.Html5Qrcode("scan-video");
     state.scanning = true;

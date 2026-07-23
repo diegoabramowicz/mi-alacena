@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
+import { trackEvent } from "../services/analytics.js";
 import { diasLabel, fmtF, getEstado, lotesDeProducto } from "../utils/date.js";
 import { fetchData } from "./data.js";
 import { renderList } from "./render.js";
@@ -141,6 +142,10 @@ export async function confirmarConsumo() {
       }
     }
     await fetchData();
+    trackEvent("stock_discount_confirmed", {
+      total_units: total,
+      lot_count: entradas.length,
+    });
     renderList();
     showToast(`−${total} consumidos`);
     closeConsumoModal();

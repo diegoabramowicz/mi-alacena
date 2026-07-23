@@ -1,4 +1,5 @@
 import { state } from "../state.js";
+import { setCurrentAnalyticsPage, trackPageView } from "../services/analytics.js";
 import { resetManualForm } from "./manual.js";
 import { closeFilterSheet, renderList } from "./render.js";
 import { stopScan } from "./scanner.js";
@@ -17,4 +18,12 @@ export function showPage(name) {
   if (name === "manual") resetManualForm();
   if (name !== "scanner" && state.scanning) stopScan();
   resetAppScroll();
+  if (name === "inventario") {
+    trackPageView("inventory", {
+      product_count: state.productos.length,
+      lot_count: state.lotes.length,
+    });
+    return;
+  }
+  setCurrentAnalyticsPage(name);
 }

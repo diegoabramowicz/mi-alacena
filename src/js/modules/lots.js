@@ -1,5 +1,6 @@
 import { state } from "../state.js";
 import { sb } from "../services/supabase.js";
+import { trackEvent } from "../services/analytics.js";
 import { renderList } from "./render.js";
 import { setLoading, showToast, toggleBodyScroll } from "../utils/ui.js";
 
@@ -51,6 +52,7 @@ export async function saveLote() {
     }
 
     state.lotes.push(data);
+    trackEvent("lot_added", { source: "inventory", quantity: state.loteQty, has_expiry: Boolean(fecha) });
     renderList();
     showToast("✓ Lote guardado");
     closeLoteModal();

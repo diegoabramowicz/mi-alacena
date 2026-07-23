@@ -32,6 +32,7 @@ import { applyMobileFilters, clearMobileFilters, closeFilterSheet, closeProductM
 import { lookupManual, saveFound, saveNew, setScanState, showManualInput, startScan, stopScan } from "./modules/scanner.js";
 import { agregarCategoria, agregarUbicacion, eliminarCategoria, eliminarUbicacion } from "./modules/settings.js";
 import { closeConfirmModal, confirmModalAction } from "./utils/ui.js";
+import { trackEvent } from "./services/analytics.js";
 
 Object.assign(window, {
   acBlur,
@@ -106,5 +107,6 @@ Object.assign(window, {
 });
 import { inject } from "@vercel/analytics";
 inject();
+trackEvent("landing_view");
 
 init();
